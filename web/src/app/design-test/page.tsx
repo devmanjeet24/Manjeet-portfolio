@@ -119,6 +119,44 @@ export default function DesignTestPage() {
             </Card>
           </div>
         </section>
+
+        <section className="space-y-6" aria-labelledby="t-cursor">
+          <SectionLabel index="06" id="t-cursor">
+            Cursor (fine pointers only)
+          </SectionLabel>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button magnetic arrow="right">
+              Magnetic
+            </Button>
+            <Button variant="secondary" magnetic={0.5} arrow="up-right">
+              Stronger pull
+            </Button>
+            <a href="#t-cursor" className="underline underline-offset-4">
+              Plain link
+            </a>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card data-cursor="view" interactive>
+              <SectionLabel>data-cursor=&quot;view&quot;</SectionLabel>
+              <p className="font-display mt-3 text-3xl">Project card</p>
+            </Card>
+            <Card data-cursor="drag" interactive>
+              <SectionLabel>data-cursor=&quot;drag&quot;</SectionLabel>
+              <p className="font-display mt-3 text-3xl">Draggable area</p>
+            </Card>
+            <Card data-cursor="text">
+              <SectionLabel>data-cursor=&quot;text&quot;</SectionLabel>
+              <p className="mt-3 text-sm leading-relaxed">
+                Select this text: the dot becomes a thin vertical bar.
+              </p>
+            </Card>
+          </div>
+          <input
+            type="text"
+            placeholder="Inputs use the text bar automatically"
+            className="border-border bg-surface-glass w-full max-w-md rounded-full border px-5 py-3 text-sm"
+          />
+        </section>
       </Container>
     </main>
   );
