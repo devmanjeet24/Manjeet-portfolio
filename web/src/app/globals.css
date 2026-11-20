@@ -68,6 +68,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "ss01", "cv11";
+  /* `clip` (unlike `hidden`) keeps position: sticky working. */
+  overflow-x: clip;
 }
 
 ::selection {

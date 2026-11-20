@@ -42,8 +42,25 @@ items get done. Tick a box when the real data is in.
 - [ ] Real institution, degree, field, period
 - [ ] Certifications (or remove the list)
 
+## NEW PORTRAIT PHOTO TO UPLOAD (pending)
+The particle portrait works (scatter on scroll, reassemble on scroll back), but the
+current photo is only a placeholder: 610px, seated full-body, head ~110px wide. A
+better photo is what makes it truly sharp.
+
+- [ ] Get a new photo: face-forward, head-and-shoulders, **1500px or larger**, good light.
+      Any background is fine (it gets removed).
+- [ ] Put it in `web/scripts/source/` (e.g. `portrait-new.jpg`) and tell Claude, or run:
+      `python3.13 -m venv .venv && .venv/bin/pip install "rembg[cpu]" pillow`
+      `.venv/bin/python web/scripts/prepare-portrait.py web/scripts/source/portrait-new.jpg web/public/images/portrait.png`
+      (the `--crop`, `--fade-bottom`, `--fade-left` defaults fit the OLD photo; re-tune them
+      for the new one, values are in source-photo pixels)
+- [ ] After replacing `portrait.png`, update the image aspect ratio (`aspect-[960/825]`) in
+      `web/src/components/hero/portrait-test-view.tsx` (and in the hero, once added)
+- [ ] Put the portrait in the Home hero (`PortraitParticlesLazy` with a scroll-linked
+      `progress`), then delete the temporary `/portrait-test` page
+      (`web/src/app/portrait-test/`, `web/src/components/hero/portrait-test-view.tsx`)
+
 ## Other assets and later work
-- [ ] Profile photo / hero image in `web/public/images/`
 - [ ] Favicon and OG/social share image
 - [ ] Site title and meta description in `src/app/layout.tsx`
 - [ ] Delete the temporary `/design-test` page before launch
