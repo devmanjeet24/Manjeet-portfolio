@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/layout/theme-provider";
+import { Footer } from "@/components/layout/footer";
+import { Navbar } from "@/components/layout/navbar";
+import { Providers } from "@/components/layout/providers";
+import { ScrollProgress } from "@/components/layout/scroll-progress";
 import "./globals.css";
 
 const display = Instrument_Serif({
@@ -43,7 +46,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${body.variable} ${mono.variable} h-full`}
     >
       <body className="flex min-h-full flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+        <Providers>
+          <a
+            href="#main"
+            className="bg-accent text-accent-foreground sr-only fixed top-4 left-4 z-[70] rounded-full px-4 py-2 font-mono text-xs focus:not-sr-only"
+          >
+            Skip to content
+          </a>
+          <ScrollProgress />
+          <Navbar />
+          {children}
+          <Footer />
+        </Providers>
       </body>
     </html>
   );
