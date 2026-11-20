@@ -3,6 +3,7 @@
 import { useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PORTRAIT } from "@/lib/portrait-config";
 import type { PortraitShape } from "./portrait-particles";
 import { PortraitParticlesLazy } from "./portrait-particles-lazy";
 
@@ -40,7 +41,12 @@ export function PortraitTestView({ alt }: { alt: string }) {
           </span>
         </div>
         <div className="aspect-[960/825] max-h-full min-h-0 w-auto max-w-full flex-1">
-          <PortraitParticlesLazy alt={alt} shape={shape} progress={progress} />
+          <PortraitParticlesLazy
+            alt={alt}
+            src={PORTRAIT.src}
+            shape={shape}
+            progress={progress}
+          />
         </div>
       </div>
     </section>

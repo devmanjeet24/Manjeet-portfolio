@@ -54,11 +54,14 @@ better photo is what makes it truly sharp.
       `.venv/bin/python web/scripts/prepare-portrait.py web/scripts/source/portrait-new.jpg web/public/images/portrait.png`
       (the `--crop`, `--fade-bottom`, `--fade-left` defaults fit the OLD photo; re-tune them
       for the new one, values are in source-photo pixels)
-- [ ] After replacing `portrait.png`, update the image aspect ratio (`aspect-[960/825]`) in
-      `web/src/components/hero/portrait-test-view.tsx` (and in the hero, once added)
-- [ ] Put the portrait in the Home hero (`PortraitParticlesLazy` with a scroll-linked
-      `progress`), then delete the temporary `/portrait-test` page
-      (`web/src/app/portrait-test/`, `web/src/components/hero/portrait-test-view.tsx`)
+- [ ] After replacing `portrait.png`, update `aspect` (width / height of the new image) in
+      `web/src/lib/portrait-config.ts`. The Home hero and `/portrait-test` both read it.
+      Then check the hero on desktop + phone; size/position may need a small tweak.
+- [x] Portrait is already in the Home hero (`web/src/components/hero/hero.tsx`) with the
+      current placeholder photo: scatters on scroll, rebuilds on scroll back.
+- [ ] Delete the temporary `/portrait-test` page (`web/src/app/portrait-test/`,
+      `web/src/components/hero/portrait-test-view.tsx`)
+- [ ] Hero text is still placeholder: edit `name`, `role`, `tagline` in `web/src/data/profile.ts`
 
 ## Other assets and later work
 - [ ] Favicon and OG/social share image
