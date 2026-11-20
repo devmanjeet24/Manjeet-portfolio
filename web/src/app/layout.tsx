@@ -1,17 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/layout/theme-provider";
 import "./globals.css";
 
-const serif = Instrument_Serif({
-  variable: "--font-serif",
+const display = Instrument_Serif({
+  variable: "--font-display",
   subsets: ["latin"],
   weight: "400",
   style: ["normal", "italic"],
+  display: "swap",
+});
+
+const body = Inter({
+  variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 const mono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -20,14 +29,22 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
-  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f3ee" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${serif.variable} ${mono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${display.variable} ${body.variable} ${mono.variable} h-full`}
+    >
+      <body className="flex min-h-full flex-col">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
