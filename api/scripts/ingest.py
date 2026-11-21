@@ -3,8 +3,10 @@
     python -m scripts.ingest                      # everything in ./knowledge
     python -m scripts.ingest --path docs/cv.pdf   # one file
     python -m scripts.ingest --dry-run            # show the passages, change nothing
+    python -m scripts.ingest --force              # re-embed even unchanged files
 
-Re-running replaces a file's old passages (use --keep to add instead).
+Safe to re-run: unchanged files are skipped, changed files have their old passages replaced, and
+(when ingesting a folder) passages of deleted files are removed.
 """
 
 from __future__ import annotations
@@ -18,7 +20,13 @@ from pathlib import Path
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.db.session import DatabaseNotConfigured, dispose_engine, get_session_factory
-from app.services.ingest import find_files, ingest_path, prepare_chunks
+from app.services.ingest import (
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_CHUNK_SIZE,
+    find_files,
+    ingest_path,
+    prepare_chunks,
+)
 from app.services.llm import LLMError, get_embedder
 
 logger = logging.getLogger("ingest")
@@ -29,11 +37,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--path", type=Path, default=Path("knowledge"), help="file or folder (default: knowledge)"
     )
-    parser.add_argument("--chunk-size", type=int, default=800, help="characters per passage (default 800)")
     parser.add_argument(
-        "--chunk-overlap", type=int, default=120, help="characters shared by neighbours (default 120)"
+        "--chunk-size",
+        type=int,
+        default=DEFAULT_CHUNK_SIZE,
+        help=f"characters per passage (default {DEFAULT_CHUNK_SIZE})",
     )
+    parser.add_argument(
+        "--chunk-overlap",
+        type=int,
+        default=DEFAULT_CHUNK_OVERLAP,
+        help=f"characters shared by neighbours (default {DEFAULT_CHUNK_OVERLAP})",
+    )
+    parser.add_argument("--force", action="store_true", help="re-embed files even if they did not change")
     parser.add_argument("--keep", action="store_true", help="add passages without removing a file's old ones")
+    parser.add_argument("--no-prune", action="store_true", help="keep passages of files that no longer exist")
     parser.add_argument(
         "--dry-run", action="store_true", help="split and print only; no embeddings, no database"
     )
@@ -59,8 +77,9 @@ async def run(args: argparse.Namespace, files: list[Path]) -> int:
             chunks = prepare_chunks(file, path, chunk_size=args.chunk_size, chunk_overlap=args.chunk_overlap)
             total += len(chunks)
             print(f"{file}: {len(chunks)} passages")
-            for chunk in chunks[:2]:
-                print(f"    - {chunk.page_content[:80]!r}")
+            for chunk in chunks:
+                label = chunk.metadata.get("heading") or "(no heading)"
+                print(f"    {len(chunk.page_content):4d} chars  {label}")
         print(f"\n{len(files)} file(s), {total} passages (dry run: nothing was stored)")
         return 0
 
@@ -70,6 +89,8 @@ async def run(args: argparse.Namespace, files: list[Path]) -> int:
             get_embedder(),
             path,
             replace=not args.keep,
+            prune=False if args.no_prune else None,
+            force=args.force,
             chunk_size=args.chunk_size,
             chunk_overlap=args.chunk_overlap,
         )
@@ -82,7 +103,10 @@ async def run(args: argparse.Namespace, files: list[Path]) -> int:
     finally:
         await dispose_engine()
 
-    print(f"Done: {stats.files} file(s), {stats.chunks} passages stored, {stats.replaced} old ones replaced.")
+    print(
+        f"Done: {stats.files} file(s). {stats.chunks} passages stored, {stats.skipped} file(s) unchanged "
+        f"(skipped), {stats.replaced} old passages replaced, {stats.pruned} removed (file deleted)."
+    )
     return 0
 
 

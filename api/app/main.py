@@ -107,7 +107,7 @@ def create_app() -> FastAPI:
         allow_origins=settings.allowed_origins_list,
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Content-Type", "X-Request-ID"],
+        allow_headers=["Content-Type", "X-Request-ID", "X-API-Key"],
         expose_headers=["X-Request-ID", "Retry-After"],
         max_age=600,
     )

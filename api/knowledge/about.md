@@ -1,33 +1,25 @@
-<!-- PLACEHOLDER: replace this file with real information about yourself. Everything the
-     chat assistant knows comes from the files in this folder (.md, .txt, .pdf).
-     HTML comments like this one are ignored. After editing, run: python -m scripts.ingest -->
+<!-- PLACEHOLDER: made-up example content. Replace it with real information, then run: python -m scripts.ingest
+     The assistant answers ONLY from these files. Anything missing here it will say it does not know.
+     Tips: write facts as full sentences that include the name; keep one topic per section; use "##" and "###" headings, because they are used to find the right passage. HTML comments are ignored. -->
 
 # About Manjeet Singh
 
-Manjeet Singh is a full-stack developer. He works mostly with React, Next.js, Node.js and
-Python, and likes to own a feature from the database all the way to the screen.
+## Who he is
 
-## Experience
+Manjeet Singh is a full-stack developer based in India. He builds web applications and the backend services behind them, mostly with React, Next.js, Node.js and Python. He likes to own a feature from the database all the way to the screen, and he cares about clean code, fast pages and interfaces that are simple to use.
 
-Manjeet has about three years of experience. He currently works as a full-stack developer, building
-features and the web applications around them. Before that he did freelance web development for
-local businesses, and he started out with an internship on a product team.
+## Background in short
 
-## Skills
+Manjeet has about three years of professional experience. He started with an internship on a product team, did freelance web development for local businesses, and now works full time as a full-stack developer. He has shipped around a dozen projects, from the first conversation with the client to the launch.
 
-- Frontend: React, Next.js, TypeScript, Tailwind CSS
-- Backend: Node.js, Express, Python, FastAPI
-- Databases: MongoDB, PostgreSQL
-- Tools: Git, Docker, Vercel, Render
+## What he is working on now
 
-## Projects
+Manjeet is currently building a booking app for a local business with Next.js and PostgreSQL. He is also learning Rust, mostly for fun, and reading more about database design.
 
-- Commerce Platform: an online shop with a cart, card payments and an admin panel (React, Node.js, MongoDB).
-- Team Workspace: real-time boards and tasks for small teams (Next.js, Socket.IO).
-- Analytics Dashboard: charts and saved views built on MongoDB aggregations.
-- Docs Search: ask questions about PDF files and get answers that point to the page (FastAPI, PostgreSQL).
+## Where he is based
 
-## Contact
+Manjeet is based in India (the city is listed on the site). He works with people in other time zones and is used to remote work.
 
-The quickest way to reach Manjeet is the contact form on this website. He usually replies
-within one or two working days.
+## How to get in touch
+
+The quickest way to reach Manjeet is the contact form on this website, or by email through the address shown in the Contact section. He usually replies within one or two working days.

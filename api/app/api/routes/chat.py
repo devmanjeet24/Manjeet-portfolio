@@ -1,25 +1,33 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import re
 from collections.abc import AsyncIterator
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.config import Settings, get_settings
-from app.core.security import client_ip, enforce_chat_rate_limit, hash_ip
+from app.core.security import (
+    client_ip,
+    enforce_chat_rate_limit,
+    enforce_session_rate_limit,
+    hash_ip,
+    verify_client,
+)
 from app.db.session import DatabaseNotConfigured, get_session_factory
-from app.services import rag
-from app.services.llm import ChatMessage, LLMError, get_embedder, get_llm
+from app.services import guard, rag
+from app.services.llm import ChatMessage, LLMError, get_condense_llm, get_embedder, get_llm
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["chat"])
 
 _SESSION_ID = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
+MAX_MESSAGE_CHARS = 500
 
 
 class HistoryItem(BaseModel):
@@ -31,7 +39,11 @@ class ChatRequest(BaseModel):
     session_id: str = Field(
         description="Random id the browser keeps for this conversation (8-64 letters, digits, - or _)."
     )
-    message: str = Field(min_length=1, max_length=2000, description="The visitor's question.")
+    message: str = Field(
+        min_length=1,
+        max_length=MAX_MESSAGE_CHARS,
+        description=f"The visitor's question (at most {MAX_MESSAGE_CHARS} characters).",
+    )
     history: list[HistoryItem] = Field(
         default_factory=list, max_length=40, description="Earlier turns, oldest first."
     )
@@ -53,10 +65,17 @@ class ChatRequest(BaseModel):
         return value
 
 
+class Reference(BaseModel):
+    source: str
+    heading: str
+
+
 class ChatResponse(BaseModel):
     answer: str
     sources: list[str]
+    references: list[Reference]
     grounded: bool
+    suggestions: list[str] = Field(default_factory=list, description="2-3 questions to ask next.")
 
 
 def _sse(event: str, data: dict[str, Any]) -> str:
@@ -65,8 +84,35 @@ def _sse(event: str, data: dict[str, Any]) -> str:
 
 async def _events(request: ChatRequest, ip_hash: str, settings: Settings) -> AsyncIterator[rag.ChatEvent]:
     """Build the services and run one turn. Setup problems become error events, not 500s."""
+    verdict = guard.screen(settings, request.message)
+    if verdict.verdict != "ok":
+        # Answered with a fixed reply: no retrieval, no model call, nothing for an attacker to steer.
+        logger.warning("message blocked", extra={"reason": verdict.verdict, "ip": ip_hash[:12]})
+        with contextlib.suppress(DatabaseNotConfigured):
+            await rag.save_chat_log(
+                get_session_factory(),
+                session_id=request.session_id,
+                question=request.message,
+                answer=verdict.reply,
+                ip_hash=ip_hash,
+            )
+        asked = [h.content for h in request.history if h.role == "user"] + [request.message]
+        yield rag.ChatEvent("sources", {"sources": [], "references": []})
+        yield rag.ChatEvent("token", {"text": verdict.reply})
+        yield rag.ChatEvent(
+            "done",
+            {
+                "sources": [],
+                "references": [],
+                "grounded": False,
+                "suggestions": guard.suggest_followups(settings, sources=[], asked=asked),
+            },
+        )
+        return
+
     try:
         llm = get_llm()
+        condense_llm = get_condense_llm()
         embedder = get_embedder()
         session_factory = get_session_factory()
     except (LLMError, DatabaseNotConfigured) as exc:
@@ -84,6 +130,7 @@ async def _events(request: ChatRequest, ip_hash: str, settings: Settings) -> Asy
         settings=settings,
         llm=llm,
         embedder=embedder,
+        condense_llm=condense_llm,
     ):
         yield event
 
@@ -94,20 +141,18 @@ async def _events(request: ChatRequest, ip_hash: str, settings: Settings) -> Asy
     responses={
         200: {
             "description": "With `stream: true` (the default) the reply is `text/event-stream`: "
-            "events `sources`, then many `token` events, then `done` (or `error`).",
+            "events `sources`, then many `token` events, then `done` (sources, grounded and 2-3 "
+            "`suggestions`) or `error`.",
             "content": {"text/event-stream": {}},
         },
-        429: {"description": "Too many messages from one IP."},
+        403: {"description": "Origin or API key not accepted."},
+        429: {"description": "Too many messages from one IP or one session."},
     },
-    dependencies=[Depends(enforce_chat_rate_limit)],
+    dependencies=[Depends(verify_client), Depends(enforce_chat_rate_limit)],
 )
 async def chat(request: Request, body: ChatRequest, settings: Annotated[Settings, Depends(get_settings)]):
     """Ask the assistant a question about the site owner (answers come from the knowledge base)."""
-    if len(body.message) > settings.chat_max_message_chars:
-        raise HTTPException(
-            status_code=413,
-            detail=f"Please keep your message under {settings.chat_max_message_chars} characters.",
-        )
+    enforce_session_rate_limit(body.session_id)
     ip_hash = hash_ip(client_ip(request))
     events = _events(body, ip_hash, settings)
 
@@ -126,16 +171,26 @@ async def chat(request: Request, body: ChatRequest, settings: Annotated[Settings
     # Not streaming: collect the whole answer into one JSON reply.
     parts: list[str] = []
     sources: list[str] = []
+    refs: list[dict[str, str]] = []
     grounded = False
+    suggestions: list[str] = []
     async for event in events:
         if event.type == "token":
             parts.append(event.data["text"])
         elif event.type == "sources":
             sources = event.data["sources"]
+            refs = event.data["references"]
         elif event.type == "done":
             grounded = bool(event.data.get("grounded"))
+            suggestions = event.data.get("suggestions", [])
         elif event.type == "error":
             return JSONResponse(
                 status_code=503, content={"detail": event.data["message"], "code": event.data["code"]}
             )
-    return ChatResponse(answer="".join(parts).strip(), sources=sources, grounded=grounded)
+    return ChatResponse(
+        answer="".join(parts).strip(),
+        sources=sources,
+        references=[Reference(**r) for r in refs],
+        grounded=grounded,
+        suggestions=suggestions,
+    )

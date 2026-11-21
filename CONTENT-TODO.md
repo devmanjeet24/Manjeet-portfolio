@@ -1,6 +1,6 @@
 # Pending work: structure, real content, launch
 
-Last updated: 2026-11-21 (FastAPI backend for the chatbot added).
+Last updated: 2026-11-21 (FastAPI backend and RAG knowledge base added).
 
 This file is the memory for everything that is still open. Work through it top to bottom
 whenever you come back. Tick a box when it is done.
@@ -45,10 +45,21 @@ rate limit, structured logging, Dockerfile, 31 tests.
       or gemini for embeddings. Decide the embedding size before the first migration (`EMBEDDING_DIM`)
 - [ ] Run `alembic upgrade head`, then `python -m scripts.ingest`, then try a few real questions.
       **No real provider call has been tried yet** (no keys were available): test each one you plan to use
-- [ ] Write the real knowledge base in `api/knowledge/` (the current `about.md` is a placeholder; see Part B)
+- [ ] Write the real knowledge base in `api/knowledge/` (all 7 files are placeholders; see Part B)
+- [ ] **Tune `RAG_MAX_DISTANCE` with your real embedding provider.** The right cut-off depends on the model.
+      Run `python -m scripts.ask --samples --retrieval-only --max-distance 2`, look at the `d=` numbers, and
+      set a value above your relevant questions and below the off-topic one. Measured with the local
+      model `bge-small` it was about 0.55; OpenAI / Gemini were not measured (default 0.75 is a guess)
+- [ ] **Read real answers once.** Add a real LLM key and run `python -m scripts.ask --samples` (and
+      `--chat` for follow-ups). Check: no invented salary/dates/clients, off-topic questions are steered back,
+      the tone is friendly and short. No real model has answered yet, only the retrieval was verified
+- [ ] Optional: set `LLM_CONDENSE_MODEL` to a cheaper model of the same provider for the follow-up rewrite step
+- [ ] Optional: `EMBEDDING_PROVIDER=local` runs a real embedding model with no API key (see `api/README.md`);
+      too heavy for a small free server, fine for development
 - [ ] Deploy on Render: steps are in `api/README.md`. Set `APP_ENV=production`,
       `TRUST_PROXY_HEADERS=true`, a real `IP_HASH_SALT` and `ALLOWED_ORIGINS`
 - [ ] The Docker image has not been built (Docker was not installed here). Build it once to be sure
+- [ ] Optional: set `CHAT_API_KEY` on Render and the same value as `NEXT_PUBLIC_CHAT_API_KEY` on Vercel (the chat widget must then send `X-API-Key`). Not a secret (it is in the web bundle).
 - [ ] The rate limit is in memory per process: fine for one small instance, not a hard cap
 - [ ] `langchain-community` was left out on purpose: LangChain has announced it is being sunset.
       File loading uses `pypdf` and plain Python instead. Add it back only if you need its other loaders
@@ -98,7 +109,7 @@ Everything lives in `web/src/data/`. Each file starts with a `REPLACE WITH REAL 
 | Images | `public/images/portrait.png` (placeholder photo, low resolution; also used in the About frame). No project or AI-project screenshots (the site draws generated mock screenshots) |
 | Files | `web/public/resume.pdf` is a generated one-page placeholder that says so. Replace it with the real resume, same file name |
 | `app/layout.tsx` | site `title` and `description` |
-| `api/knowledge/about.md` | The assistant's whole knowledge base is one made-up placeholder file (about the same dummy person as the site). Replace it with real material, then run `python -m scripts.ingest` |
+| `api/knowledge/*.md` (7 files) | The chat assistant's whole knowledge: `about`, `experience`, `projects`, `skills`, `education`, `faq`, `ai-projects`. All made-up placeholders (about the same dummy person as the site). Replace them with real material, then run `python -m scripts.ingest` |
 | Placeholder behaviour | The AI section's "Try the AI assistant" line (see A1) |
 
 ### `profile.ts`
@@ -186,6 +197,20 @@ Everything lives in `web/src/data/`. Each file starts with a `REPLACE WITH REAL 
       strict limit use a shared store (e.g. Upstash Redis) in `src/lib/rate-limit.ts`
 - [ ] After setting the keys, send yourself a real message and check the inbox and spam folder.
       (Everything else about the form was tested against a mock mail server, not the real one)
+
+### Chat assistant knowledge base (`api/knowledge/*.md`)
+The assistant answers ONLY from these files, so anything wrong or missing here is wrong or missing in chat.
+- [ ] Replace all 7 files with real information: `about.md`, `experience.md`, `projects.md`, `skills.md`,
+      `education.md`, `faq.md`, `ai-projects.md` (keep it consistent with the site's data files)
+- [ ] `faq.md` matters most: write the questions recruiters and clients really ask, with true answers
+      (availability, work style, tech preferences, location, languages, notice period, how you want
+      salary or rates handled). Keep availability wording neutral
+- [ ] Headings should name the thing ("Commerce Platform"); write full sentences that include your name;
+      put the answer to the likely question in the text (see `api/README.md`, "The knowledge base")
+- [ ] Do not put anything private in these files: the assistant can repeat it to visitors
+- [ ] After every edit run `python -m scripts.ingest` (only changed files are re-embedded), then
+      `python -m scripts.ask --samples --retrieval-only` to check retrieval still works
+- [ ] Update the 10 sample questions in `api/scripts/sample_questions.py` to match your real content
 
 ### Portrait photo (pending upload)
 The particle portrait works (scatters on scroll, rebuilds on scroll back), but the current photo

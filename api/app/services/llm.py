@@ -6,11 +6,13 @@ switching between Anthropic, OpenAI, Groq and Gemini never touches the chat code
 
   anthropic          the official `anthropic` SDK (Claude)
   openai/groq/gemini the official `openai` SDK, pointed at each service's OpenAI-compatible API
+  local              a real embedding model run on this machine (optional, via fastembed)
   mock / hash        offline stand-ins for tests and local development (no API key, no cost)
 """
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 import math
@@ -98,10 +100,10 @@ _FALLBACK_BETA = "server-side-fallback-2026-07-01"
 class AnthropicProvider(LLMProvider):
     name = "anthropic"
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, model: str | None = None) -> None:
         if not settings.llm_api_key:
             raise ProviderNotConfigured("LLM_API_KEY is not set (needed for LLM_PROVIDER=anthropic)")
-        self.model = settings.resolved_llm_model
+        self.model = model or settings.resolved_llm_model
         self._effort = settings.llm_effort
         self._fallback = settings.anthropic_refusal_fallback and self.model in _FALLBACK_MODELS
         self._client = anthropic.AsyncAnthropic(
@@ -155,11 +157,11 @@ class AnthropicProvider(LLMProvider):
 class OpenAICompatProvider(LLMProvider):
     """OpenAI, Groq and Gemini (through its OpenAI-compatible endpoint)."""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, model: str | None = None) -> None:
         self.name = settings.llm_provider
         if not settings.llm_api_key:
             raise ProviderNotConfigured(f"LLM_API_KEY is not set (needed for LLM_PROVIDER={self.name})")
-        self.model = settings.resolved_llm_model
+        self.model = model or settings.resolved_llm_model
         self._temperature = settings.llm_temperature
         self._client = openai.AsyncOpenAI(
             api_key=settings.llm_api_key.get_secret_value(),
@@ -206,8 +208,8 @@ class MockProvider(LLMProvider):
 
     name = "mock"
 
-    def __init__(self, settings: Settings) -> None:
-        self.model = settings.resolved_llm_model
+    def __init__(self, settings: Settings, model: str | None = None) -> None:
+        self.model = model or settings.resolved_llm_model
 
     async def stream(
         self, *, system: str, messages: Sequence[ChatMessage], max_tokens: int
@@ -223,19 +225,27 @@ class MockProvider(LLMProvider):
             yield " ".join(words[i : i + 4]) + (" " if i + 4 < len(words) else "")
 
 
-def build_llm(settings: Settings) -> LLMProvider:
+def build_llm(settings: Settings, model: str | None = None) -> LLMProvider:
+    """The chat model for LLM_PROVIDER. `model` overrides LLM_MODEL (used for the condense step)."""
     if settings.llm_provider == "anthropic":
-        return AnthropicProvider(settings)
+        return AnthropicProvider(settings, model)
     if settings.llm_provider in {"openai", "groq", "gemini"}:
-        return OpenAICompatProvider(settings)
+        return OpenAICompatProvider(settings, model)
     if settings.llm_provider == "mock":
-        return MockProvider(settings)
+        return MockProvider(settings, model)
     raise ProviderNotConfigured(f"Unknown LLM_PROVIDER: {settings.llm_provider}")
 
 
 @lru_cache
 def get_llm() -> LLMProvider:
     return build_llm(get_settings())
+
+
+@lru_cache
+def get_condense_llm() -> LLMProvider:
+    """The model that rewrites follow-up questions: LLM_CONDENSE_MODEL, or the main model."""
+    settings = get_settings()
+    return build_llm(settings, settings.llm_condense_model) if settings.llm_condense_model else get_llm()
 
 
 # ---------------------------------------------------------------------------------------
@@ -309,11 +319,35 @@ class OpenAICompatEmbedder(Embedder):
         return self._check_dim(vectors)
 
 
+_STOPWORD_TEXT = """
+a an the and or but if of to in on at by for with from as is are was were be been being do does did
+has have had he she they it its his her their him them this that these those what which who whom how
+when where why can could should would will may might about into than then so such not no yes any all
+more most some tell me you your i my we our us please also there here
+"""
+_STOPWORDS = frozenset(re.findall(r"[a-z]+", _STOPWORD_TEXT))
+
+
+def _tokens(text: str) -> list[str]:
+    """Lower-case words without filler words, with a crude plural/-ing/-ed trim."""
+    words = []
+    for word in re.findall(r"[a-z0-9]+", text.lower()):
+        if word in _STOPWORDS:
+            continue
+        for suffix in ("ing", "ed", "es", "s"):
+            if len(word) > len(suffix) + 3 and word.endswith(suffix):
+                word = word[: -len(suffix)]
+                break
+        words.append(word)
+    return words
+
+
 class HashEmbedder(Embedder):
     """Offline stand-in for development and tests: hashes words into a fixed-size vector.
 
-    Texts that share words end up near each other, but it understands no meaning. Do not use
-    it for the real site: set EMBEDDING_PROVIDER to openai or gemini.
+    Texts that share (non-filler) words end up near each other, but it understands no meaning:
+    "job" and "work" are unrelated to it. Do not use it for the real site: set
+    EMBEDDING_PROVIDER to openai or gemini.
     """
 
     name = "hash"
@@ -326,18 +360,59 @@ class HashEmbedder(Embedder):
         return [self._embed(text) for text in texts]
 
     def _embed(self, text: str) -> list[float]:
+        counts: dict[str, int] = {}
+        for word in _tokens(text):
+            counts[word] = counts.get(word, 0) + 1
         vector = [0.0] * self.dim
-        for word in re.findall(r"[a-z0-9]+", text.lower()):
+        for word, count in counts.items():
             digest = hashlib.blake2b(word.encode(), digest_size=8).digest()
             index = int.from_bytes(digest[:4], "big") % self.dim
-            vector[index] += 1.0 if digest[4] & 1 else -1.0
+            sign = 1.0 if digest[4] & 1 else -1.0
+            vector[index] += sign * (1.0 + math.log(count))  # repeated words count, with diminishing returns
         norm = math.sqrt(sum(v * v for v in vector)) or 1.0
         return [v / norm for v in vector]
+
+
+class LocalEmbedder(Embedder):
+    """A real embedding model that runs on this machine through `fastembed` (ONNX): no API key,
+    no cost, no data leaves the server. Optional: `pip install -r requirements-local.txt`.
+
+    Suggested: EMBEDDING_MODEL=BAAI/bge-small-en-v1.5 with EMBEDDING_DIM=384 (English). The model
+    (about 130 MB) is downloaded on first use. It needs a few hundred MB of memory, so it suits
+    development and bigger servers more than a small free-tier instance.
+    """
+
+    name = "local"
+
+    def __init__(self, settings: Settings) -> None:
+        try:
+            from fastembed import TextEmbedding
+        except ImportError as exc:
+            raise ProviderNotConfigured(
+                "EMBEDDING_PROVIDER=local needs fastembed: pip install -r requirements-local.txt"
+            ) from exc
+        self.model = settings.embedding_model
+        self.dim = settings.embedding_dim
+        self._model = TextEmbedding(self.model)
+
+    async def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
+        # The model is CPU work: keep it off the event loop. `passage_embed` is for stored text.
+        vectors = await asyncio.to_thread(
+            lambda: [v.tolist() for v in self._model.passage_embed(list(texts))]
+        )
+        return self._check_dim(vectors)
+
+    async def embed_query(self, text: str) -> list[float]:
+        # Retrieval models treat questions and passages slightly differently.
+        vectors = await asyncio.to_thread(lambda: [v.tolist() for v in self._model.query_embed(text)])
+        return self._check_dim(vectors)[0]
 
 
 def build_embedder(settings: Settings) -> Embedder:
     if settings.embedding_provider == "hash":
         return HashEmbedder(settings)
+    if settings.embedding_provider == "local":
+        return LocalEmbedder(settings)
     return OpenAICompatEmbedder(settings)
 
 

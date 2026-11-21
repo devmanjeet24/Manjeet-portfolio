@@ -1,0 +1,5 @@
+# Optional: run a real embedding model on this machine (EMBEDDING_PROVIDER=local).
+# No API key needed. Not required for the normal setup (openai / gemini embeddings).
+-r requirements.txt
+
+fastembed==0.9.1

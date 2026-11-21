@@ -9,7 +9,7 @@ from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 LLMProviderName = Literal["anthropic", "openai", "groq", "gemini", "mock"]
-EmbeddingProviderName = Literal["openai", "gemini", "hash"]
+EmbeddingProviderName = Literal["openai", "gemini", "local", "hash"]
 Effort = Literal["low", "medium", "high", "xhigh", "max"]
 
 # Used when LLM_MODEL is not set. Model names change often: check your provider's docs.
@@ -31,11 +31,13 @@ OPENAI_COMPAT_BASE_URLS: dict[str, str | None] = {
 _OPTIONAL_FIELDS = (
     "llm_api_key",
     "llm_model",
+    "llm_condense_model",
     "llm_base_url",
     "llm_effort",
     "llm_temperature",
     "embedding_api_key",
     "embedding_base_url",
+    "chat_api_key",
 )
 
 
@@ -51,6 +53,8 @@ class Settings(BaseSettings):
     log_json: bool | None = None
     enable_docs: bool = True
     owner_name: str = "Manjeet Singh"
+    #: How the assistant refers to the owner in the third person: he, she or they.
+    owner_pronoun: Literal["he", "she", "they"] = "he"
 
     # ---- Database (Neon PostgreSQL) ----
     database_url: str = ""
@@ -61,6 +65,9 @@ class Settings(BaseSettings):
     llm_model: str | None = None
     #: Override the API address (a proxy, or any other OpenAI-compatible service).
     llm_base_url: str | None = None
+    #: A (cheaper) model of the same provider used only to rewrite follow-up questions.
+    #: Unset = the main model.
+    llm_condense_model: str | None = None
     llm_max_tokens: int = 700
     #: Anthropic only: how much the model thinks. `low` is right for short grounded answers.
     #: Leave empty for Claude models that do not support `effort`.
@@ -84,14 +91,27 @@ class Settings(BaseSettings):
     allowed_origins: str = ""
     #: Trust X-Forwarded-For (turn on behind Render/Vercel/nginx, off when exposed directly).
     trust_proxy_headers: bool = False
-    chat_rate_limit_per_minute: int = 10
-    chat_max_message_chars: int = 1000
+    #: Messages one IP may send per window, and one session id per window (both sliding).
+    chat_rate_limit_ip: int = 20
+    chat_rate_limit_session: int = 12
+    chat_rate_window_seconds: int = 600
+    #: A whole answer (retrieval + model) must finish within this many seconds.
+    chat_timeout_seconds: float = 45.0
+    #: Optional shared key. When set, requests must send it as `X-API-Key`. It sits in the web
+    #: bundle, so it only keeps out casual scripts, not a determined person. Unset = not checked.
+    chat_api_key: SecretStr | None = None
     chat_history_turns: int = 6
     #: Secret for hashing visitor IPs before they are stored. Change it in production.
     ip_hash_salt: SecretStr = SecretStr("change-me")
 
     # ---- RAG ----
     rag_top_k: int = 5
+    #: MMR (maximal marginal relevance): fetch more passages, then keep a varied top-k so the
+    #: answer is not built from five near-copies of the same paragraph.
+    rag_use_mmr: bool = True
+    rag_fetch_k: int = 20
+    #: 1.0 = pure relevance, 0.0 = pure variety.
+    rag_mmr_lambda: float = 0.7
     #: Cosine distance (0 = identical, 2 = opposite). Chunks farther than this are ignored.
     rag_max_distance: float = 0.75
 
