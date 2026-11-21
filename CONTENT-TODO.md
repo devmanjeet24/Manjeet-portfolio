@@ -10,18 +10,20 @@ no "hire me / available for freelance", no "building with AI" style taglines, no
 that reads like generated marketing copy.
 
 ## Placeholder register (everything that is still dummy)
-Updated: 2026-11-21
+Updated: 2026-11-21 (About section added)
 
 | Where | What is dummy |
 |---|---|
 | `profile.ts` | `name` ("Manjeet Singh", confirm), `location` ("City, India"), `email` (hello@example.com), social URLs (`your-username`), `resumeUrl` (no `resume.pdf` yet), `role`, `tagline`, `shortBio`, `longBio`, `availability` |
+| `profile.ts` (About) | `stats` (`yearsOfExperience`, `projectsShipped`), `currently` (`building`, `learning`); `longBio` is the About text; the "Technologies" number is counted from `skills.ts` (so it is dummy until skills are real) |
 | `profile.ts` (hero) | `heroRoleLine`, `focusAreas`, `heroCaption`, `heroDescription`, `marquee` |
 | `skills.ts` | skill list, levels, icon keys |
 | `projects.ts` | all 5 projects (titles, text, links, images do not exist) |
 | `aiProjects.ts` | all 3 projects (RAG Q&A, Chatbot, Lead Scraper): text, steps, links, images |
 | `experience.ts` | all companies, roles, dates, achievements |
 | `education.ts` | institution, degree, certification |
-| Images | `public/images/portrait.png` (placeholder photo, low-res); no project / AI project images |
+| Images | `public/images/portrait.png` (placeholder photo, low-res; also used in the About frame); no project / AI project images |
+| Links | "Download resume" points to `/resume.pdf` (file missing, so it 404s); "GitHub" button uses the dummy GitHub URL |
 | `app/layout.tsx` | site `title` and `description` |
 | Temporary pages | `/design-test`, `/portrait-test`, and the `?debug=1` slider (dev only) |
 | Nothing yet | favicon, social share image, contact form backend, chatbot backend and keys |
@@ -40,6 +42,16 @@ Updated: 2026-11-21
       `heroCaption` (small line above the name), `heroDescription` (1-2 lines under the name),
       `marquee` (bottom strip of short phrases). The top-right label is
       "Based in <location>": set `location` to e.g. "Delhi, India".
+
+## About section (`components/sections/about.tsx`)
+- [ ] Replace `longBio` in `profile.ts` (2-3 short paragraphs, your own words, plain tone)
+- [ ] Real `stats.yearsOfExperience` and `stats.projectsShipped`
+- [ ] Real `currently.building` and `currently.learning` (update now and then)
+- [ ] Add `web/public/resume.pdf` so "Download resume" works
+- [ ] Real GitHub URL (in `socials`)
+- [ ] Better photo for the image frame (see "NEW PORTRAIT PHOTO" below); the frame crops
+      `portrait.png`, so a head-and-shoulders photo works best
+- [ ] The heading text "A bit about me" is fixed in the component; change it there if wanted
 
 ## `skills.ts`
 - [ ] Confirm skill names and remove/add the ones that apply

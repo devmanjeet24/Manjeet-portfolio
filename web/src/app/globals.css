@@ -284,6 +284,14 @@ html.cursor-custom * {
   }
 }
 
+/* ---------- Word-by-word scroll reveal (see ScrollRevealText) ---------- */
+.reveal-word {
+  /* Word i is fully lit once progress has passed it by a few words. */
+  opacity: calc(
+    0.2 + 0.8 * clamp(0, (var(--p, 1) * (var(--n, 1) + 6) - var(--i, 0)) / 6, 1)
+  );
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   html {

@@ -33,6 +33,10 @@ export interface Profile {
   heroDescription: string;
   /** Hero, slow marquee strip along the bottom. */
   marquee: string[];
+  /** About: counted-up numbers. The technology count is taken from skills.ts. */
+  stats: { yearsOfExperience: number; projectsShipped: number };
+  /** About: the "Currently" card. */
+  currently: { building: string; learning: string };
 }
 
 export const profile: Profile = {
@@ -68,4 +72,9 @@ export const profile: Profile = {
     "Clean interfaces",
     "Fast, accessible sites",
   ],
+  stats: { yearsOfExperience: 3, projectsShipped: 12 },
+  currently: {
+    building: "A booking app for a local business, with Next.js and PostgreSQL.",
+    learning: "Rust, mostly for fun, and more about database design.",
+  },
 };
