@@ -39,6 +39,8 @@ export interface Profile {
   currently: { building: string; learning: string };
   /** Resume section: 3-4 short bullets next to the preview. */
   resumeHighlights: string[];
+  /** Contact section: one short, honest line about how fast you answer. */
+  responseTime: string;
 }
 
 export const profile: Profile = {
@@ -85,4 +87,5 @@ export const profile: Profile = {
     "12+ projects shipped, from the first call to launch",
     "Happy to own a feature end to end, including tests and deployment",
   ],
+  responseTime: "Usually replies within one or two working days.",
 };

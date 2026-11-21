@@ -2,6 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { copyToClipboard } from "@/lib/clipboard";
 import { highlightPython } from "@/lib/highlight-python";
 import { cn } from "@/lib/cn";
 
@@ -21,20 +22,7 @@ export function CodeBlock({ code, filename, label, className }: CodeBlockProps) 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-    } catch {
-      // Clipboard API unavailable (insecure context): fall back to a hidden textarea.
-      const area = document.createElement("textarea");
-      area.value = code;
-      area.setAttribute("readonly", "");
-      area.style.position = "fixed";
-      area.style.opacity = "0";
-      document.body.appendChild(area);
-      area.select();
-      document.execCommand("copy");
-      area.remove();
-    }
+    if (!(await copyToClipboard(code))) return;
     setCopied(true);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setCopied(false), 2000);

@@ -1,6 +1,7 @@
 import { Hero } from "@/components/hero/hero";
 import { About } from "@/components/sections/about";
 import { AiProjects } from "@/components/sections/ai-projects";
+import { Contact } from "@/components/sections/contact";
 import { Experience } from "@/components/sections/experience";
 import { Projects } from "@/components/sections/projects";
 import { Resume } from "@/components/sections/resume";
@@ -17,6 +18,7 @@ const BUILT = new Set([
   "ai",
   "experience",
   "resume",
+  "contact",
 ]);
 
 export default function Home() {
@@ -29,6 +31,7 @@ export default function Home() {
       <AiProjects />
       <Experience />
       <Resume />
+      <Contact />
       {SECTIONS.map(({ id, label }, i) =>
         BUILT.has(id) ? null : (
           <SectionPlaceholder
