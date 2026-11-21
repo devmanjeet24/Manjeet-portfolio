@@ -7,7 +7,10 @@ import { FooterMeta } from "./footer-meta";
 export function Footer() {
   return (
     <footer className="border-border mt-auto border-t py-10">
-      <Container className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+      <Container
+        size="wide"
+        className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between"
+      >
         <FooterMeta name={profile.name} />
 
         <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">

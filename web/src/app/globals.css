@@ -280,6 +280,119 @@ html.cursor-custom * {
   opacity: 1;
 }
 
+/* ---------- Code syntax colours (the code block is always dark) ---------- */
+.tok-comment {
+  color: #7d7a72;
+  font-style: italic;
+}
+.tok-string {
+  color: #a6d189;
+}
+.tok-decorator {
+  color: #8ab4f8;
+}
+.tok-number {
+  color: #f2a6b8;
+}
+.tok-keyword {
+  color: #e8a87c;
+}
+.tok-constant {
+  color: #f2a6b8;
+}
+.tok-function {
+  color: #e5c890;
+}
+.tok-type {
+  color: #81c8be;
+}
+
+/* ---------- AI section: grid backdrop + flowing pipeline lines ---------- */
+.ai-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--foreground) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--foreground) 7%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 75% 55% at 50% 25%,
+    #000 25%,
+    transparent 75%
+  );
+  mask-image: radial-gradient(ellipse 75% 55% at 50% 25%, #000 25%, transparent 75%);
+}
+.flow-line-x {
+  height: 2px;
+  background: repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 9px);
+  background-size: 9px 2px;
+}
+.flow-line-y {
+  width: 2px;
+  background: repeating-linear-gradient(180deg, currentColor 0 3px, transparent 3px 9px);
+  background-size: 2px 9px;
+}
+.flow-on.flow-line-x {
+  animation: flow-dots-x 0.7s linear infinite;
+}
+.flow-on.flow-line-y {
+  animation: flow-dots-y 0.7s linear infinite;
+}
+@keyframes flow-dots-x {
+  to {
+    background-position: 9px 0;
+  }
+}
+@keyframes flow-dots-y {
+  to {
+    background-position: 0 9px;
+  }
+}
+.flow-particle-x {
+  animation: flow-x 1.8s linear infinite;
+}
+.flow-particle-y {
+  animation: flow-y 1.8s linear infinite;
+}
+@keyframes flow-x {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+@keyframes flow-y {
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
 /* ---------- Marquee track (speed and direction come from CSS variables) ---------- */
 .marquee-track {
   animation: marquee var(--marquee-duration, 70s) linear infinite

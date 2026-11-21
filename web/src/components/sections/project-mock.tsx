@@ -1,9 +1,14 @@
 import type { Project } from "@/data/projects";
+import { cn } from "@/lib/cn";
 import { hashString, seededRandom } from "@/lib/hash";
 
-type Variant = "dashboard" | "storefront" | "workspace" | "feed" | "chat" | "generic";
+export type MockVariant =
+  "dashboard" | "storefront" | "workspace" | "feed" | "chat" | "generic";
 
-function variantFor({ category, kinds }: Pick<Project, "category" | "kinds">): Variant {
+export function mockVariantFor({
+  category,
+  kinds,
+}: Pick<Project, "category" | "kinds">): MockVariant {
   if (kinds.includes("ai")) return "chat";
   switch (category) {
     case "Dashboard":
@@ -28,15 +33,23 @@ const line = "rounded-full bg-white/15";
  */
 export function ProjectMock({
   project,
+  variant: variantOverride,
+  seedKey = "",
+  className,
 }: {
   project: Pick<Project, "slug" | "category" | "kinds">;
+  /** Draw a different layout than the project's own (used for the gallery). */
+  variant?: MockVariant;
+  /** Changes the colours without changing the project (gallery images differ). */
+  seedKey?: string;
+  className?: string;
 }) {
-  const seed = hashString(project.slug);
+  const seed = hashString(project.slug + seedKey);
   const rand = seededRandom(seed);
   const hue1 = seed % 360;
   const hue2 = (hue1 + 45 + Math.floor(rand() * 50)) % 360;
   const accent = `hsl(${hue1} 85% 68%)`;
-  const variant = variantFor(project);
+  const variant = variantOverride ?? mockVariantFor(project);
 
   const points = Array.from(
     { length: 9 },
@@ -46,7 +59,7 @@ export function ProjectMock({
   return (
     <div
       aria-hidden
-      className="relative aspect-[16/10] w-full overflow-hidden"
+      className={cn("relative aspect-[16/10] w-full overflow-hidden", className)}
       style={{
         background: `radial-gradient(120% 90% at 20% 0%, hsl(${hue1} 60% 30%), transparent 60%), linear-gradient(135deg, hsl(${hue1} 50% 16%), hsl(${hue2} 55% 9%))`,
       }}

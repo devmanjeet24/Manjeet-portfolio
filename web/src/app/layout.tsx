@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { Providers } from "@/components/layout/providers";
 import { ScrollProgress } from "@/components/layout/scroll-progress";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const display = Instrument_Serif({
@@ -28,6 +29,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Manjeet Singh",
   description: "Portfolio of Manjeet Singh, full-stack developer.",
 };

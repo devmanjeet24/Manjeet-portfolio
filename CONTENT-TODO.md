@@ -10,7 +10,7 @@ no "hire me / available for freelance", no "building with AI" style taglines, no
 that reads like generated marketing copy.
 
 ## Placeholder register (everything that is still dummy)
-Updated: 2026-11-21 (About, Skills and Projects sections added)
+Updated: 2026-11-21 (About, Skills, Projects, project detail pages and AI Projects added)
 
 | Where | What is dummy |
 |---|---|
@@ -18,10 +18,11 @@ Updated: 2026-11-21 (About, Skills and Projects sections added)
 | `profile.ts` (About) | `stats` (`yearsOfExperience`, `projectsShipped`), `currently` (`building`, `learning`); `longBio` is the About text; the "Technologies" number is counted from `skills.ts` (so it is dummy until skills are real) |
 | `profile.ts` (hero) | `heroRoleLine`, `focusAreas`, `heroCaption`, `heroDescription`, `marquee` |
 | `skills.ts` | skill list (names, categories), `level` values (not shown on the site yet), `iconKey`s; the AI/ML category is the highlighted one |
-| `projects.ts` | all 5 projects (titles, text, years, links); no screenshots (the site draws generated mock screenshots); `kinds` (filter chips) and `mern` (badge) are guesses; project #5 "Docs Search" is a made-up non-MERN project so the AI filter has something |
-| `aiProjects.ts` | all 3 projects (RAG Q&A, Chatbot, Lead Scraper): text, steps, links, images |
+| `projects.ts` | all 5 projects (titles, text, years, links) and all their detail-page text (`role`, `problem`, `approach`, `features`, `challenges`); no screenshots (the site draws generated mock screenshots); `kinds` (filter chips) and `mern` (badge) are guesses; project #5 "Docs Search" is a made-up non-MERN project so the AI filter has something |
+| `aiProjects.ts` | all 3 projects (RAG Q&A, Chatbot, Lead Scraper): pitch, `status`, problem/approach text, pipeline steps, tech, links (demo, GitHub, API docs), and the FastAPI code snippets (written as illustrations, not copied from real code) |
 | `experience.ts` | all companies, roles, dates, achievements |
 | `education.ts` | institution, degree, certification |
+| Placeholder behaviour | The AI section's "Try the AI assistant on this site" line calls `openChat()` (`src/lib/chat-events.ts`); no chat widget exists yet, so it only shows "not available yet" |
 | Images | `public/images/portrait.png` (placeholder photo, low-res; also used in the About frame); no project / AI project images |
 | Links | "Download resume" points to `/resume.pdf` (file missing, so it 404s); "GitHub" button uses the dummy GitHub URL |
 | `app/layout.tsx` | site `title` and `description` |
@@ -72,15 +73,24 @@ Updated: 2026-11-21 (About, Skills and Projects sections added)
 - [ ] `kinds` per project: `"full-stack"`, `"frontend"` and/or `"ai"` (these drive the filter chips)
 - [ ] Tech lists and highlights
 - [ ] Replace the made-up "Docs Search" project (non-MERN, AI filter) with a real one, or drop the AI chip
-- [ ] Each card links to `/projects/<slug>`: that detail page is not built yet (404 for now)
+- [ ] Detail pages (`/projects/<slug>`, built): rewrite `role`, `problem`, `approach`, `features`, `challenges` and
+      `longDescription` (the "Overview") for each real project, in your own plain words
+- [ ] Optional `gallery: ["/images/projects/x-1.jpg", ...]` per project; until set, three generated mock screens show
+- [ ] A new project's slug works automatically (`generateStaticParams` and `proxy.ts` both read `projects.ts`);
+      any other `/projects/<slug>` returns a real 404
 - [ ] `featured` is not used yet (all projects are shown)
 
-## `aiProjects.ts` (3 placeholders: RAG Q&A, Chatbot, Lead Scraper)
-- [ ] Real titles, problem and solution text
-- [ ] Architecture steps matching how each one is actually built
-- [ ] `githubUrl` and `demoUrl`
-- [ ] Images in `web/public/images/ai/`
-- [ ] Tech lists
+## `aiProjects.ts` and the AI Projects section (`components/sections/ai-projects.tsx`)
+- [ ] Real titles, one-line `summary` (the pitch), `status` ("Live", "In progress" or "Prototype")
+- [ ] `problem` and `solution` text for each project
+- [ ] `steps`: the pipeline boxes must match how each one is really built (title, one sentence,
+      and an `icon`; the icon names are listed at the top of `aiProjects.ts`)
+- [ ] `tech` chips, and `githubUrl`, `demoUrl`, `apiDocsUrl` (each optional; the button is hidden if missing)
+- [ ] `code`: paste a real, short FastAPI endpoint from each project (filename + snippet; Python
+      is highlighted). The current snippets are made-up illustrations
+- [ ] Section heading "Under the hood" and its one-line intro are fixed in `ai-projects.tsx`
+- [ ] When the chat widget is built it must call `onOpenChat(...)` from `src/lib/chat-events.ts`
+      so the "Try the AI assistant" line opens it
 
 ## `experience.ts`
 - [ ] Real companies, roles, periods, locations
@@ -113,6 +123,8 @@ better photo is what makes it truly sharp.
 - [ ] Hero text is still placeholder: edit `name`, `role`, `tagline` in `web/src/data/profile.ts`
 
 ## Other assets and later work
+- [ ] Set `NEXT_PUBLIC_SITE_URL` (e.g. in Vercel) to the real site address, so canonical and share-card
+      URLs are correct (they fall back to `http://localhost:3000`)
 - [ ] Favicon and OG/social share image
 - [ ] Site title and meta description in `src/app/layout.tsx`
 - [ ] Delete the temporary `/design-test` page before launch
