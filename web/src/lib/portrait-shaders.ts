@@ -86,6 +86,8 @@ export const portraitVertexShader = /* glsl */ `
   uniform vec2 uFocus;       // face centre, in aOrigin units
   uniform vec3 uAccent;      // warm colour scattering particles drift toward
   uniform float uAccentMix;
+  uniform vec2 uFadeY;       // (full-alpha y, zero-alpha y) in aOrigin units; (-10, -11) disables
+  uniform float uMono;       // 0 = dark theme (photo colours), 1 = light theme (dark ink dots)
 
   attribute vec3 aOrigin;
   attribute vec3 aColor;
@@ -150,8 +152,16 @@ export const portraitVertexShader = /* glsl */ `
     size *= mix(1.0, mix(0.55, 1.1, luma), uShape);
 
     gl_PointSize = max(size * uPointScale / -mv.z, 1.0);
-    vColor = mix(aColor, uAccent, uAccentMix * warm);
-    vAlpha = aAlpha * alphaK;
+    // Light theme: pale photo colours would vanish on a pale page, so draw dark ink dots
+    // whose tone follows the photo (newsprint-like).
+    vec3 ink = mix(vec3(0.07, 0.06, 0.055), vec3(0.80, 0.76, 0.72), pow(luma, 0.9));
+    vec3 base = mix(aColor, mix(ink, aColor * 0.6, 0.2), uMono);
+    vColor = mix(base, uAccent, uAccentMix * warm);
+
+    // Static fade toward the bottom of the portrait, from the assembled position,
+    // so text laid over the shoulders stays readable.
+    float fadeT = clamp((aOrigin.y - uFadeY.y) / (uFadeY.x - uFadeY.y), 0.0, 1.0);
+    vAlpha = aAlpha * alphaK * (fadeT * fadeT * (3.0 - 2.0 * fadeT));
   }
 `;
 

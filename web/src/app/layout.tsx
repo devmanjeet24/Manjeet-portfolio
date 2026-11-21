@@ -28,8 +28,8 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Portfolio",
-  description: "AI and full-stack developer portfolio.",
+  title: "Manjeet Singh",
+  description: "Portfolio of Manjeet Singh, full-stack developer.",
 };
 
 export const viewport: Viewport = {

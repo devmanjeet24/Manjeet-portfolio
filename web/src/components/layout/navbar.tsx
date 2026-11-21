@@ -109,7 +109,7 @@ export function Navbar() {
             arrow="right"
             magnetic
             onClick={(e) => onAnchorClick(e, "contact")}
-            className={cn("hidden md:inline-flex", scrolled ? "h-9" : "h-10")}
+            className={cn("ml-3 hidden md:inline-flex", scrolled ? "h-9" : "h-10")}
           >
             Let&apos;s talk
           </Button>

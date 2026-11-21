@@ -5,7 +5,12 @@
 export const PORTRAIT = {
   src: "/images/portrait.png",
   aspect: 960 / 825,
+  /** Where the face centre sits across the image (0 = left edge, 1 = right edge). */
+  faceX: 0.58,
 } as const;
+
+/** Hero: the portrait fades out toward the shoulders so the name and text stay readable. */
+export const PORTRAIT_FADE_BOTTOM = [0.12, -0.3] as const;
 
 /** Tuning for the scroll-driven disintegration (see lib/portrait-sampler.ts and portrait-shaders.ts). */
 export const DISINTEGRATE = {

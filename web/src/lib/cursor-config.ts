@@ -11,3 +11,6 @@ export const SPOTLIGHT_SIZE = 900;
 
 /** Extra distance (px) around a magnetic element where the pull starts. */
 export const MAGNET_RANGE = 48;
+
+/** Largest distance (px) a magnetic element may be pulled; smaller than the gap between controls. */
+export const MAGNET_MAX_SHIFT = 14;

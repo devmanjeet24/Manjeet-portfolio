@@ -49,6 +49,13 @@ interface PortraitParticlesProps {
   progress?: MotionValue<number>;
   /** Overrides the device-based particle target. */
   targetCount?: number;
+  /**
+   * Fade the bottom of the portrait: [y where alpha is 1, y where it reaches 0], with the
+   * portrait spanning y = +0.5 (top) to -0.5 (bottom). Off by default.
+   */
+  fadeBottom?: readonly [number, number];
+  /** Called once the particles are on screen (e.g. to start an intro animation). */
+  onReady?: () => void;
   className?: string;
 }
 
@@ -79,6 +86,7 @@ function createScene(
   shape: PortraitShape,
   tilt: boolean,
   progress: MotionValue<number> | undefined,
+  fadeBottom: readonly [number, number] | undefined,
   onFail: () => void,
 ): SceneHandle {
   const renderer = new WebGLRenderer({
@@ -116,6 +124,8 @@ function createScene(
       uFocus: { value: new Vector2(sample.focus[0], sample.focus[1]) },
       uAccent: { value: new Vector3().copy(FALLBACK_ACCENT) },
       uAccentMix: { value: DISINTEGRATE.accentMix },
+      uFadeY: { value: new Vector2(fadeBottom?.[0] ?? -10, fadeBottom?.[1] ?? -11) },
+      uMono: { value: 0 },
     },
     // Fewer noise octaves on phones keeps the vertex shader cheap.
     defines: { OCTAVES: tier.mobile ? 1 : 2 },
@@ -124,6 +134,10 @@ function createScene(
   });
 
   readAccent(material.uniforms.uAccent.value as Vector3);
+  // Light theme (no `dark` class) switches the particles to dark ink; eased when toggled.
+  const isLight = () => (document.documentElement.classList.contains("dark") ? 0 : 1);
+  const mono = { value: isLight(), target: isLight() };
+  material.uniforms.uMono.value = mono.value;
 
   const points = new Points(geometry, material);
   points.frustumCulled = false;
@@ -217,6 +231,12 @@ function createScene(
       renderMs += (performance.now() - t0 - renderMs) * 0.1;
       dirty = false;
     }
+    const monoGap = mono.target - mono.value;
+    if (Math.abs(monoGap) > 1e-3) {
+      mono.value += monoGap * (1 - Math.exp(-dt / 0.12));
+      material.uniforms.uMono.value = mono.value;
+      dirty = true;
+    }
     // Light-weight stats for the debug panel and tests (every 30 frames).
     if (++frames % 30 === 0) {
       wrapper.dataset.frameMs = intervalMs.toFixed(1);
@@ -279,6 +299,11 @@ function createScene(
   // Re-read the accent when the theme class on <html> changes.
   const themeObserver = new MutationObserver(() => {
     readAccent(material.uniforms.uAccent.value as Vector3);
+    mono.target = isLight();
+    if (!running) {
+      mono.value = mono.target;
+      material.uniforms.uMono.value = mono.value;
+    }
     dirty = true;
   });
   themeObserver.observe(document.documentElement, {
@@ -336,11 +361,19 @@ export function PortraitParticles({
   shape = "round",
   progress,
   targetCount,
+  fadeBottom,
+  onReady,
   className,
 }: PortraitParticlesProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<SceneHandle | null>(null);
   const shapeRef = useRef(shape);
+  const onReadyRef = useRef(onReady);
+  const fadeRef = useRef(fadeBottom);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+    fadeRef.current = fadeBottom;
+  });
   const [failed, setFailed] = useState(false);
   const reduceMotion = useReducedMotion() ?? false;
 
@@ -363,8 +396,10 @@ export function PortraitParticles({
           shapeRef.current,
           !reduceMotion,
           reduceMotion ? undefined : progress,
+          fadeRef.current,
           () => setFailed(true),
         );
+        onReadyRef.current?.();
       } catch {
         if (!cancelled) setFailed(true);
       }

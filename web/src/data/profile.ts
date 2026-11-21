@@ -23,20 +23,30 @@ export interface Profile {
   resumeUrl: string;
   /** Neutral, non-promotional status line. */
   availability: string;
+  /** Hero, top-left label. Sentences separated by periods. */
+  heroRoleLine: string;
+  /** Hero, vertical list on the left (desktop). */
+  focusAreas: string[];
+  /** Hero, small caption above the name. */
+  heroCaption: string;
+  /** Hero, one or two lines under the name. */
+  heroDescription: string;
+  /** Hero, slow marquee strip along the bottom. */
+  marquee: string[];
 }
 
 export const profile: Profile = {
-  name: "Your Name",
-  role: "AI & Full-Stack Developer",
-  tagline: "Building thoughtful products at the edge of software and intelligence.",
+  name: "Manjeet Singh",
+  role: "Full-Stack Developer",
+  tagline: "Full-stack developer. I build web apps and the backends behind them.",
   shortBio:
-    "I design and build web applications and AI-powered systems, from polished interfaces to the retrieval pipelines behind them.",
+    "I build web apps and backend services, mostly with React, Node.js and Python.",
   longBio: [
-    "I'm a full-stack developer working across the MERN stack and Python, with a growing focus on applied AI. I enjoy turning ambiguous problems into clear, well-engineered products.",
-    "On the AI side I build retrieval-augmented generation systems, conversational agents and automation pipelines using LangChain, vector databases and modern LLM APIs.",
-    "I care about performance, accessibility and craft, and I like work where design and engineering meet.",
+    "I'm a full-stack developer. I work mostly with React, Node.js and Python, and I like owning a feature from the database all the way to the screen.",
+    "I have built web apps, APIs and a few automation tools. I care about code that is easy to read and pages that load fast.",
+    "I care about performance, accessibility and clear code, and I like work where design and engineering meet.",
   ],
-  location: "City, Country",
+  location: "City, India",
   email: "hello@example.com",
   socials: [
     { label: "GitHub", url: "https://github.com/your-username", icon: "github" },
@@ -45,4 +55,17 @@ export const profile: Profile = {
   ],
   resumeUrl: "/resume.pdf",
   availability: "Open to interesting conversations and collaborations.",
+  heroRoleLine: "Developer. Engineer. Builder.",
+  focusAreas: ["Full-stack", "Backend systems", "Product engineering"],
+  heroCaption: "Websites, apps and backends",
+  heroDescription:
+    "I build websites, web apps and backend services. I like clean code and interfaces that are simple to use.",
+  marquee: [
+    "Full-stack development",
+    "Web apps",
+    "APIs and backends",
+    "Databases",
+    "Clean interfaces",
+    "Fast, accessible sites",
+  ],
 };

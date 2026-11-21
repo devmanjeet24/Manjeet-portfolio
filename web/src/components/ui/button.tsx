@@ -1,19 +1,19 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useRef, type ComponentPropsWithoutRef } from "react";
 import { useMagnetic } from "@/hooks/use-magnetic";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "link";
 type Size = "md" | "lg";
 
 type CommonProps = {
   variant?: Variant;
   size?: Size;
   /** Show a trailing arrow. "up-right" suits external links. */
-  arrow?: "right" | "up-right";
+  arrow?: "right" | "up-right" | "down";
   /** Pull toward the cursor. `true` = 0.3, or pass a strength (0-1). Fine pointers only. */
   magnetic?: boolean | number;
   className?: string;
@@ -35,6 +35,8 @@ const variants: Record<Variant, string> = {
   secondary:
     "border border-border-strong text-foreground hover:border-accent hover:text-accent",
   ghost: "text-muted hover:text-foreground",
+  // Underlined text link: ignores `size`.
+  link: "rounded-none border-b border-border-strong pb-1 text-foreground hover:border-accent hover:text-accent",
 };
 
 const sizes: Record<Size, string> = {
@@ -53,12 +55,20 @@ export function Button({
 }: ButtonProps) {
   const ref = useRef<HTMLElement | null>(null);
   useMagnetic(ref, magnetic === true ? 0.3 : (magnetic ?? false));
-  const classes = cn(base, variants[variant], sizes[size], className);
-  const Arrow = arrow === "up-right" ? ArrowUpRight : ArrowRight;
+  const classes = cn(
+    base,
+    variants[variant],
+    variant !== "link" && sizes[size],
+    className,
+  );
+  const Arrow =
+    arrow === "up-right" ? ArrowUpRight : arrow === "down" ? ArrowDown : ArrowRight;
   const motion =
     arrow === "up-right"
       ? "group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-      : "group-hover:translate-x-1";
+      : arrow === "down"
+        ? "group-hover:translate-y-0.5"
+        : "group-hover:translate-x-1";
   const content = (
     <>
       {children}

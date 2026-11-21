@@ -3,7 +3,7 @@
 import { useReducedMotion } from "framer-motion";
 import gsap from "gsap";
 import { useEffect, type RefObject } from "react";
-import { MAGNET_RANGE } from "@/lib/cursor-config";
+import { MAGNET_RANGE, MAGNET_MAX_SHIFT as MAX_SHIFT } from "@/lib/cursor-config";
 import { subscribePointer } from "@/lib/pointer";
 import { useFinePointer } from "./use-fine-pointer";
 
@@ -15,6 +15,8 @@ import { useFinePointer } from "./use-fine-pointer";
 export function useMagnetic(
   ref: RefObject<HTMLElement | null>,
   strength: number | false,
+  /** Max pull in px. Keeps a button from sliding over a neighbouring control. */
+  maxShift = MAX_SHIFT,
 ) {
   const fine = useFinePointer();
   const reduce = useReducedMotion();
@@ -38,9 +40,16 @@ export function useMagnetic(
 
       if (Math.hypot(dx, dy) < radius) {
         pulled = true;
+        let tx = dx * strength;
+        let ty = dy * strength;
+        const len = Math.hypot(tx, ty);
+        if (len > maxShift) {
+          tx = (tx / len) * maxShift;
+          ty = (ty / len) * maxShift;
+        }
         gsap.to(el, {
-          x: dx * strength,
-          y: dy * strength,
+          x: tx,
+          y: ty,
           duration: 0.4,
           ease: "power3.out",
           overwrite: "auto",
@@ -62,5 +71,5 @@ export function useMagnetic(
       gsap.killTweensOf(el);
       gsap.set(el, { x: 0, y: 0 });
     };
-  }, [ref, strength, fine, reduce]);
+  }, [ref, strength, maxShift, fine, reduce]);
 }
