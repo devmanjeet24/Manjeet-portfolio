@@ -5,7 +5,7 @@ A premium, cinematic developer portfolio for an AI + Full-Stack Developer (MERN,
 
 ## Monorepo
 - `web/` — Next.js (App Router), `src/` directory
-- `api/` — Python FastAPI backend (placeholder for now)
+- `api/` — Python FastAPI backend for the chat assistant only (RAG over pgvector); see `api/README.md`
 
 ## Tech stack
 - Frontend: Next.js 14+ (App Router), TypeScript (strict), Tailwind CSS

@@ -1,6 +1,6 @@
 # Pending work: structure, real content, launch
 
-Last updated: 2026-11-21.
+Last updated: 2026-11-21 (FastAPI backend for the chatbot added).
 
 This file is the memory for everything that is still open. Work through it top to bottom
 whenever you come back. Tick a box when it is done.
@@ -15,30 +15,45 @@ copy. Any new dummy content that gets added must be logged in the register in Pa
 
 The site is built section by section. Everything below is **not built yet**.
 
-### A1. Floating AI chatbot (the last big piece)
+### A1. Floating AI chatbot widget (the last big piece in `web/`)
+The backend now exists (see A2); the widget does not.
 - [ ] Chat widget UI: a floating button (bottom right) that opens a chat panel. Should work on
       phones, respect reduced motion, be keyboard accessible, and use the same design tokens
       (dark/light) as the rest of the site
+- [ ] Talk to the API: `POST {NEXT_PUBLIC_API_URL}/api/chat` and read the Server-Sent Events
+      stream. The exact request, the event format and a ready-to-adapt reading loop are in
+      `api/README.md` (section "API"). Keep a random `session_id` in `sessionStorage` and send the
+      last few turns as `history`
+- [ ] Add `NEXT_PUBLIC_API_URL` to `web/.env.example` (and to Vercel). It is public by design;
+      the API's `ALLOWED_ORIGINS` must contain the site's address
 - [ ] **Hook-up already in place:** `src/lib/chat-events.ts` has `openChat()` and `onOpenChat(handler)`.
       The widget must call `onOpenChat(() => setOpen(true))` once mounted. The AI Projects
       section's line "Try the AI assistant on this site" already calls `openChat()`; until the
       widget exists it only shows "The assistant is not available yet"
 - [ ] Mount the widget once in `src/app/layout.tsx` (next to `Navbar` and `Footer`)
-- [ ] Decide what it answers (about you, your projects, your skills) and write the knowledge
-      base content (a short document about you works well to start)
-- [ ] Backend for it: see A2. Without a backend the widget has nothing to talk to
-- [ ] Add a guard against abuse (rate limit, max message length) like the contact route has
-- [ ] API keys (Claude / OpenAI) go in env files only, never in the repo or the browser
+- [ ] Show the three error cases sensibly: `rate_limited` (too many messages), `unavailable`
+      (the assistant is down), and a dropped connection. Show `sources` if you want
+- [ ] Say in the site's privacy text that chat messages are stored (the API logs question + answer)
 
-### A2. `api/` backend (FastAPI)
-- [ ] `api/` is an empty folder with a README. Planned stack: FastAPI, LangChain, PostgreSQL
-      (with pgvector if you do retrieval), deploy on Render
-- [ ] Only the chatbot needs it. The **contact form does not**: it is a Next.js route handler
-      (`web/src/app/api/contact/route.ts`) and already works once the env keys are set (see C-Contact)
-- [ ] When it exists: CORS for the site's domain, a streaming chat endpoint, `/docs` enabled,
-      and a health check endpoint for Render
-- [ ] The three "AI Projects" cards show *illustrative* FastAPI snippets. Replace them with real
-      endpoints when you have them (see Part B, AI Projects)
+### A2. `api/` backend (FastAPI): built, needs real keys and a deploy
+Built and tested (see `api/README.md`): FastAPI + pgvector RAG, Alembic migration, provider-agnostic
+LLM layer (Anthropic / OpenAI / Groq / Gemini via `.env`), ingestion script, health checks, CORS,
+rate limit, structured logging, Dockerfile, 31 tests.
+- [ ] Create a Neon database and put its connection string in `api/.env` (`DATABASE_URL`)
+- [ ] Choose the chat model and embedding provider and add the keys (`LLM_PROVIDER`, `LLM_API_KEY`,
+      `EMBEDDING_PROVIDER`, `EMBEDDING_API_KEY`). Anthropic has no embeddings, so pair it with openai
+      or gemini for embeddings. Decide the embedding size before the first migration (`EMBEDDING_DIM`)
+- [ ] Run `alembic upgrade head`, then `python -m scripts.ingest`, then try a few real questions.
+      **No real provider call has been tried yet** (no keys were available): test each one you plan to use
+- [ ] Write the real knowledge base in `api/knowledge/` (the current `about.md` is a placeholder; see Part B)
+- [ ] Deploy on Render: steps are in `api/README.md`. Set `APP_ENV=production`,
+      `TRUST_PROXY_HEADERS=true`, a real `IP_HASH_SALT` and `ALLOWED_ORIGINS`
+- [ ] The Docker image has not been built (Docker was not installed here). Build it once to be sure
+- [ ] The rate limit is in memory per process: fine for one small instance, not a hard cap
+- [ ] `langchain-community` was left out on purpose: LangChain has announced it is being sunset.
+      File loading uses `pypdf` and plain Python instead. Add it back only if you need its other loaders
+- [ ] Decide the model for production. `claude-opus-5-5` is the default but a smaller model is cheaper and
+      plenty for short answers (`LLM_MODEL`)
 
 ### A3. Site-wide SEO and polish files (none exist yet)
 - [ ] Favicon and app icons (replace `src/app/favicon.ico`; add `icon.png` / `apple-icon.png` if wanted)
@@ -83,6 +98,7 @@ Everything lives in `web/src/data/`. Each file starts with a `REPLACE WITH REAL 
 | Images | `public/images/portrait.png` (placeholder photo, low resolution; also used in the About frame). No project or AI-project screenshots (the site draws generated mock screenshots) |
 | Files | `web/public/resume.pdf` is a generated one-page placeholder that says so. Replace it with the real resume, same file name |
 | `app/layout.tsx` | site `title` and `description` |
+| `api/knowledge/about.md` | The assistant's whole knowledge base is one made-up placeholder file (about the same dummy person as the site). Replace it with real material, then run `python -m scripts.ingest` |
 | Placeholder behaviour | The AI section's "Try the AI assistant" line (see A1) |
 
 ### `profile.ts`
@@ -200,7 +216,7 @@ truly sharp.
       it in a public repo (it is committed)
 
 ### Deploy
-- [ ] Web on Vercel, API on Render (when the API exists). Set the env vars from `web/.env.example`
+- [ ] Web on Vercel, API on Render. Set the env vars from `web/.env.example`
       on Vercel, plus `NEXT_PUBLIC_SITE_URL`
 - [ ] Connect the real domain; then set `NEXT_PUBLIC_SITE_URL` and verify the domain in Resend
 
@@ -215,6 +231,7 @@ truly sharp.
 
 ### Checks that were not done (be honest about these)
 All testing so far was done in headless Chromium on one Mac, with software rendering.
+- [ ] The chat API end to end with a real provider key, a real Neon database and a real browser (the widget is not built yet)
 - [ ] Real GPU performance of the particle portrait (target 60 fps). Open `/?debug=1` and
       watch "frame ms" on a real machine, a laptop on battery and a mid-range phone
 - [ ] Real phones and tablets (touch, Safari on iPhone, Chrome on Android), not just a narrow window
