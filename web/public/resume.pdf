@@ -1,0 +1,49 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 896 >>
+stream
+q 0.91 0.66 0.49 rg 72 800 60 3 re f Q
+BT /F1 30 Tf 72 760 Td (Manjeet Singh) Tj ET
+BT /F2 13 Tf 72 735 Td (Full-Stack Developer) Tj ET
+BT /F1 11 Tf 72 690 Td (PLACEHOLDER RESUME) Tj ET
+BT /F2 11 Tf 72 668 Td (This is a stand-in file so the Download and View buttons work.) Tj ET
+BT /F2 11 Tf 72 650 Td (Replace web/public/resume.pdf with your real resume \(keep the same name\).) Tj ET
+BT /F1 11 Tf 72 600 Td (EXPERIENCE) Tj ET
+BT /F2 10 Tf 72 582 Td (Company Name - Full-Stack Developer \(2024 - Present\)) Tj ET
+BT /F2 10 Tf 72 566 Td (Independent - Freelance Web Developer \(2023 - 2024\)) Tj ET
+BT /F1 11 Tf 72 520 Td (SKILLS) Tj ET
+BT /F2 10 Tf 72 502 Td (React, Next.js, TypeScript, Node.js, Express, Python, FastAPI, MongoDB, PostgreSQL) Tj ET
+BT /F1 11 Tf 72 456 Td (EDUCATION) Tj ET
+BT /F2 10 Tf 72 438 Td (Bachelor of Technology - Computer Science & Engineering \(2017 - 2021\)) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000257 00000 n 
+0000001203 00000 n 
+0000001278 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1348
+%%EOF

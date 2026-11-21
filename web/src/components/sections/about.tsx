@@ -11,6 +11,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import { profile } from "@/data/profile";
 import { skillCategories } from "@/data/skills";
 import { AboutPortrait } from "./about-portrait";
+import { DownloadResumeButton } from "./download-resume-button";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -77,9 +78,7 @@ export function About() {
               className="text-foreground max-w-2xl text-lg leading-relaxed md:text-xl"
             />
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Button href={profile.resumeUrl} download size="lg" arrow="down" magnetic>
-                Download resume
-              </Button>
+              <DownloadResumeButton size="lg" magnetic source="about" />
               {github ? (
                 <Button
                   href={github.url}

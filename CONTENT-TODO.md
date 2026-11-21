@@ -10,21 +10,23 @@ no "hire me / available for freelance", no "building with AI" style taglines, no
 that reads like generated marketing copy.
 
 ## Placeholder register (everything that is still dummy)
-Updated: 2026-11-21 (About, Skills, Projects, project detail pages and AI Projects added)
+Updated: 2026-11-21 (About, Skills, Projects, project detail pages, AI Projects, Experience and Resume added)
 
 | Where | What is dummy |
 |---|---|
 | `profile.ts` | `name` ("Manjeet Singh", confirm), `location` ("City, India"), `email` (hello@example.com), social URLs (`your-username`), `resumeUrl` (no `resume.pdf` yet), `role`, `tagline`, `shortBio`, `longBio`, `availability` |
 | `profile.ts` (About) | `stats` (`yearsOfExperience`, `projectsShipped`), `currently` (`building`, `learning`); `longBio` is the About text; the "Technologies" number is counted from `skills.ts` (so it is dummy until skills are real) |
+| `profile.ts` (Resume) | `resumeHighlights` (4 bullets next to the resume preview) |
 | `profile.ts` (hero) | `heroRoleLine`, `focusAreas`, `heroCaption`, `heroDescription`, `marquee` |
 | `skills.ts` | skill list (names, categories), `level` values (not shown on the site yet), `iconKey`s; the AI/ML category is the highlighted one |
 | `projects.ts` | all 5 projects (titles, text, years, links) and all their detail-page text (`role`, `problem`, `approach`, `features`, `challenges`); no screenshots (the site draws generated mock screenshots); `kinds` (filter chips) and `mern` (badge) are guesses; project #5 "Docs Search" is a made-up non-MERN project so the AI filter has something |
 | `aiProjects.ts` | all 3 projects (RAG Q&A, Chatbot, Lead Scraper): pitch, `status`, problem/approach text, pipeline steps, tech, links (demo, GitHub, API docs), and the FastAPI code snippets (written as illustrations, not copied from real code) |
-| `experience.ts` | all companies, roles, dates, achievements |
+| `experience.ts` | all 4 entries (companies, roles, `kind`, dates, achievements, tech); they are made-up examples of a job, freelance work, an internship and self-directed projects |
 | `education.ts` | institution, degree, certification |
 | Placeholder behaviour | The AI section's "Try the AI assistant on this site" line calls `openChat()` (`src/lib/chat-events.ts`); no chat widget exists yet, so it only shows "not available yet" |
 | Images | `public/images/portrait.png` (placeholder photo, low-res; also used in the About frame); no project / AI project images |
-| Links | "Download resume" points to `/resume.pdf` (file missing, so it 404s); "GitHub" button uses the dummy GitHub URL |
+| Files | `web/public/resume.pdf` is a generated one-page placeholder (it says so). Replace it with your real resume, same file name |
+| Links | "GitHub" button uses the dummy GitHub URL |
 | `app/layout.tsx` | site `title` and `description` |
 | Temporary pages | `/design-test`, `/portrait-test`, and the `?debug=1` slider (dev only) |
 | Nothing yet | favicon, social share image, contact form backend, chatbot backend and keys |
@@ -48,11 +50,19 @@ Updated: 2026-11-21 (About, Skills, Projects, project detail pages and AI Projec
 - [ ] Replace `longBio` in `profile.ts` (2-3 short paragraphs, your own words, plain tone)
 - [ ] Real `stats.yearsOfExperience` and `stats.projectsShipped`
 - [ ] Real `currently.building` and `currently.learning` (update now and then)
-- [ ] Add `web/public/resume.pdf` so "Download resume" works
+- [ ] Replace the placeholder `web/public/resume.pdf` with your real resume (the About and Resume buttons use it)
 - [ ] Real GitHub URL (in `socials`)
 - [ ] Better photo for the image frame (see "NEW PORTRAIT PHOTO" below); the frame crops
       `portrait.png`, so a head-and-shoulders photo works best
 - [ ] The heading text "A bit about me" is fixed in the component; change it there if wanted
+
+## Resume section (`components/sections/resume.tsx`)
+- [ ] Replace `web/public/resume.pdf` (keep the name `resume.pdf`, or change `resumeUrl` in `profile.ts`)
+- [ ] Write 3-4 real `resumeHighlights` in `profile.ts`
+- [ ] The mini preview card is drawn from your data (name, role, email, location, first two
+      experience entries, skills, first degree), so it updates itself. It is not a screenshot of the PDF
+- [ ] Analytics: `trackEvent("resume_download" | "resume_view")` in `src/lib/analytics.ts` does nothing
+      yet. Connect your tool there (or call `setAnalyticsHandler`) when you pick one
 
 ## `skills.ts` and the Skills section (`components/sections/skills.tsx`)
 - [ ] Confirm skill names and remove/add the ones that apply (the About "Technologies" number counts them)
@@ -92,14 +102,18 @@ Updated: 2026-11-21 (About, Skills, Projects, project detail pages and AI Projec
 - [ ] When the chat widget is built it must call `onOpenChat(...)` from `src/lib/chat-events.ts`
       so the "Try the AI assistant" line opens it
 
-## `experience.ts`
-- [ ] Real companies, roles, periods, locations
-- [ ] Descriptions and achievements (add numbers where true)
-- [ ] Tech per role
+## `experience.ts` and the Experience section (`components/sections/experience.tsx`)
+- [ ] Replace the 4 sample entries with your own, newest first. Fewer is fine (even 1-2 look good)
+- [ ] Pick the right `kind` for each: "Full-time", "Contract", "Internship", "Freelance",
+      "Self-directed" or "Open source". Internships, freelance work and self-directed or open-source
+      projects are legitimate entries: use an honest `company` ("Independent", "Open source")
+- [ ] `current: true` on anything still going on
+- [ ] 2-3 concrete achievements per entry (only the first three are shown), plus tech
+- [ ] Heading "The path so far" and its intro line are fixed in `experience.tsx`
 
-## `education.ts`
-- [ ] Real institution, degree, field, period
-- [ ] Certifications (or remove the list)
+## `education.ts` (shown as the Education row under the timeline)
+- [ ] Real institution, degree, field, period (one card per entry)
+- [ ] Certifications (shown together in one card), or empty the list to hide the card
 
 ## NEW PORTRAIT PHOTO TO UPLOAD (pending)
 The particle portrait works (scatter on scroll, reassemble on scroll back), but the

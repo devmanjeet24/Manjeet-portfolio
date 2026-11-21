@@ -37,6 +37,8 @@ export interface Profile {
   stats: { yearsOfExperience: number; projectsShipped: number };
   /** About: the "Currently" card. */
   currently: { building: string; learning: string };
+  /** Resume section: 3-4 short bullets next to the preview. */
+  resumeHighlights: string[];
 }
 
 export const profile: Profile = {
@@ -77,4 +79,10 @@ export const profile: Profile = {
     building: "A booking app for a local business, with Next.js and PostgreSQL.",
     learning: "Rust, mostly for fun, and more about database design.",
   },
+  resumeHighlights: [
+    "Full-stack developer: React, Node.js and Python, from the database to the interface",
+    "3+ years across a full-time job, an internship and client projects",
+    "12+ projects shipped, from the first call to launch",
+    "Happy to own a feature end to end, including tests and deployment",
+  ],
 };
