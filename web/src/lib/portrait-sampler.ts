@@ -24,6 +24,8 @@ export interface PortraitSample {
   focus: [number, number];
   /** Distance between neighbouring samples, in the same units as `origin`. */
   spacing: number;
+  /** Time spent decoding and sampling the image (ms). */
+  sampleMs: number;
 }
 
 export interface SampleOptions {
@@ -155,6 +157,7 @@ export async function samplePortrait(
     maxSize = 1200,
   }: SampleOptions,
 ): Promise<PortraitSample> {
+  const t0 = performance.now();
   const img = await loadImage(src);
   const scale = Math.min(1, maxSize / Math.max(img.naturalWidth, img.naturalHeight));
   const w = Math.max(1, Math.round(img.naturalWidth * scale));
@@ -248,16 +251,36 @@ export async function samplePortrait(
     delay[i] = smooth01(late) * delaySpan;
   }
 
+  // Shuffle so any prefix of the buffers is a uniform sample of the portrait. That lets the
+  // fps guard draw fewer particles (setDrawRange) without cutting off a part of the face.
+  const order = new Uint32Array(n);
+  for (let i = 0; i < n; i++) order[i] = i;
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = order[i];
+    order[i] = order[j];
+    order[j] = tmp;
+  }
+  const shuffled = (src: Float32Array, stride: number) => {
+    const out = new Float32Array(n * stride);
+    for (let i = 0; i < n; i++) {
+      const from = order[i] * stride;
+      for (let k = 0; k < stride; k++) out[i * stride + k] = src[from + k];
+    }
+    return out;
+  };
+
   return {
     count: n,
     aspect,
-    origin: origin.slice(0, n * 3),
-    color: color.slice(0, n * 3),
-    alpha: alphaOut.slice(0, n),
-    size: size.slice(0, n),
-    random: random.slice(0, n * 4),
-    delay,
+    origin: shuffled(origin, 3),
+    color: shuffled(color, 3),
+    alpha: shuffled(alphaOut, 1),
+    size: shuffled(size, 1),
+    random: shuffled(random, 4),
+    delay: shuffled(delay, 1),
     focus,
     spacing: step / h,
+    sampleMs: performance.now() - t0,
   };
 }

@@ -87,7 +87,10 @@ export const portraitVertexShader = /* glsl */ `
   uniform vec3 uAccent;      // warm colour scattering particles drift toward
   uniform float uAccentMix;
   uniform vec2 uFadeY;       // (full-alpha y, zero-alpha y) in aOrigin units; (-10, -11) disables
-  uniform float uMono;       // 0 = dark theme (photo colours), 1 = light theme (dark ink dots)
+  uniform float uMono;       // 0 = dark theme (warm off-white), 1 = light theme (dark ink dots)
+  uniform float uGlow;       // strength of the additive glow pass (0 in the light theme)
+  uniform float uPhotoTint;  // share of the photo's own colour kept in the dark theme
+  uniform float uSizeBoost;  // grows dots when the fps guard draws fewer particles
 
   attribute vec3 aOrigin;
   attribute vec3 aColor;
@@ -98,6 +101,7 @@ export const portraitVertexShader = /* glsl */ `
 
   varying vec3 vColor;
   varying float vAlpha;
+  varying float vPx;
 
   ${NOISE}
 
@@ -151,17 +155,26 @@ export const portraitVertexShader = /* glsl */ `
     // Halftone: dot size follows brightness.
     size *= mix(1.0, mix(0.55, 1.1, luma), uShape);
 
-    gl_PointSize = max(size * uPointScale / -mv.z, 1.0);
-    // Light theme: pale photo colours would vanish on a pale page, so draw dark ink dots
-    // whose tone follows the photo (newsprint-like).
+    gl_PointSize = max(size * uSizeBoost * uPointScale / -mv.z, 1.0);
+    vPx = gl_PointSize;
+    // Dark theme: warm off-white tones that follow the photo's brightness.
+    // Light theme: dark ink dots (pale colours would vanish on a pale page).
+    vec3 warmWhite = vec3(0.957, 0.945, 0.925);
+    vec3 darkCol = mix(warmWhite * (0.05 + 0.95 * pow(luma, 0.78)), aColor, uPhotoTint);
     vec3 ink = mix(vec3(0.07, 0.06, 0.055), vec3(0.80, 0.76, 0.72), pow(luma, 0.9));
-    vec3 base = mix(aColor, mix(ink, aColor * 0.6, 0.2), uMono);
+    vec3 lightCol = mix(ink, aColor * 0.6, 0.2);
+    vec3 base = mix(darkCol, lightCol, uMono);
     vColor = mix(base, uAccent, uAccentMix * warm);
 
     // Static fade toward the bottom of the portrait, from the assembled position,
     // so text laid over the shoulders stays readable.
     float fadeT = clamp((aOrigin.y - uFadeY.y) / (uFadeY.x - uFadeY.y), 0.0, 1.0);
     vAlpha = aAlpha * alphaK * (fadeT * fadeT * (3.0 - 2.0 * fadeT));
+    #ifdef GLOW_PASS
+      // Glow pass: only particles that have left the portrait, and only softly, so the
+      // assembled picture is untouched.
+      vAlpha *= smoothstep(0.03, 0.25, local) * uGlow;
+    #endif
   }
 `;
 
@@ -169,6 +182,7 @@ export const portraitFragmentShader = /* glsl */ `
   uniform float uShape;
   varying vec3 vColor;
   varying float vAlpha;
+  varying float vPx;
 
   void main() {
     vec2 p = gl_PointCoord - 0.5;
@@ -176,8 +190,10 @@ export const portraitFragmentShader = /* glsl */ `
     if (uShape < 0.5) {
       float d = length(p) * 2.0;
       if (d > 1.0) discard;
-      // Solid dot with a thin antialiased rim: dense dots read as a sharp image.
-      alpha *= 1.0 - smoothstep(0.8, 1.0, d);
+      // Solid dot with an antialiased rim whose softness follows the dot size in pixels,
+      // so small dots stay smooth instead of shimmering.
+      float soft = clamp(1.6 / max(vPx, 1.0), 0.1, 0.55);
+      alpha *= 1.0 - smoothstep(1.0 - soft, 1.0, d);
     }
     if (alpha < 0.01) discard;
     gl_FragColor = vec4(vColor, alpha);

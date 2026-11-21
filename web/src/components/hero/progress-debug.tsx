@@ -16,6 +16,11 @@ interface Stats {
   progress: string;
   frameMs: string;
   renderMs: string;
+  quality: string;
+  renders: string;
+  skipped: string;
+  particles: string;
+  sampleMs: string;
 }
 
 const noopSubscribe = () => () => {};
@@ -33,6 +38,11 @@ export function ProgressDebug({ progress, onOwnChange, onRelease }: ProgressDebu
     progress: "-",
     frameMs: "-",
     renderMs: "-",
+    quality: "-",
+    renders: "-",
+    skipped: "-",
+    particles: "-",
+    sampleMs: "-",
   });
 
   useEffect(() => {
@@ -44,6 +54,11 @@ export function ProgressDebug({ progress, onOwnChange, onRelease }: ProgressDebu
         progress: el.dataset.progress ?? "0",
         frameMs: el.dataset.frameMs ?? "-",
         renderMs: el.dataset.renderMs ?? "-",
+        quality: el.dataset.quality ?? "-",
+        renders: el.dataset.renders ?? "-",
+        skipped: el.dataset.skipped ?? "-",
+        particles: el.dataset.particles ?? "-",
+        sampleMs: el.dataset.sampleMs ?? "-",
       });
     }, 400);
     return () => window.clearInterval(id);
@@ -92,6 +107,16 @@ export function ProgressDebug({ progress, onOwnChange, onRelease }: ProgressDebu
         <dd className="text-foreground text-right">{stats.frameMs}</dd>
         <dt>render ms (cpu)</dt>
         <dd className="text-foreground text-right">{stats.renderMs}</dd>
+        <dt>particles</dt>
+        <dd className="text-foreground text-right">{stats.particles}</dd>
+        <dt>quality @dpr</dt>
+        <dd className="text-foreground text-right">{stats.quality}</dd>
+        <dt>draws / skipped</dt>
+        <dd className="text-foreground text-right">
+          {stats.renders} / {stats.skipped}
+        </dd>
+        <dt>sample ms</dt>
+        <dd className="text-foreground text-right">{stats.sampleMs}</dd>
       </dl>
     </div>
   );

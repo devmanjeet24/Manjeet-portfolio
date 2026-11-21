@@ -16,6 +16,7 @@ import { Container } from "@/components/ui/container";
 import { Marquee } from "@/components/ui/marquee";
 import { profile } from "@/data/profile";
 import { useAnchorNavigation } from "@/hooks/use-anchor-navigation";
+import { useFinePointer } from "@/hooks/use-fine-pointer";
 import { useMousePosition } from "@/hooks/use-mouse-position";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { useSectionProgress } from "@/hooks/use-section-progress";
@@ -64,6 +65,7 @@ function useFade(source: MotionValue<number>, range: [number, number]) {
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const reduceMotion = usePrefersReducedMotion();
+  const finePointer = useFinePointer();
   const onAnchorClick = useAnchorNavigation();
   const scroll = useSectionProgress(sectionRef);
 
@@ -113,7 +115,8 @@ export function Hero() {
     x: useTransform(sx, [-1, 1], [-14, 14]),
     y: useTransform(sy, [-1, 1], [-9, 9]),
   };
-  const still = reduceMotion;
+  // Parallax needs a mouse: touch devices and reduced motion keep every layer still.
+  const still = reduceMotion || !finePointer;
 
   // ---- Scroll: text drifts up at different speeds and fades as the particles scatter.
   const labelsFade = useFade(scroll, [0.02, 0.18]);

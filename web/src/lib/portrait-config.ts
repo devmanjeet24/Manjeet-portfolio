@@ -25,3 +25,37 @@ export const DISINTEGRATE = {
   /** How far scattering particles shift toward the accent colour (0-1). */
   accentMix: 0.55,
 } as const;
+
+/** Look and behaviour of the particle renderer. */
+export const PORTRAIT_LOOK = {
+  /**
+   * Dark theme adds a second, additive-blended pass that makes scattered particles glow.
+   * The assembled portrait always uses normal blending: additive on densely overlapping
+   * dots turns the photo grainy (overlap counts vary per pixel).
+   */
+  darkGlow: true,
+  /** Strength of the glow pass (0-1). */
+  glow: 0.55,
+  /** How much of the photo's own colour survives in the warm off-white dark theme (0-1). */
+  photoTint: 0.12,
+  /** Smoothing time constant (s) when the theme switches. */
+  themeTau: 0.3,
+  /** Progress at or above this means every particle is invisible: rendering is skipped. */
+  blankAt: 0.9995,
+} as const;
+
+/** Frame-rate guard: if average fps stays under `minFps`, quality steps down. */
+export const FPS_GUARD = {
+  minFps: 40,
+  /** Length of the measuring window. */
+  windowMs: 2000,
+  /** Ignore the first moments after start (shader compile, first uploads). */
+  warmupMs: 1500,
+  /** Minimum consecutive rendered frames in a window before acting. */
+  minSamples: 20,
+  /** Share of particles drawn at each quality step. */
+  fractions: [1, 0.8, 0.62, 0.48, 0.36],
+  /** Resolution is lowered first, in these steps, down to `minDpr`. */
+  dprStep: 0.25,
+  minDpr: 1,
+} as const;
