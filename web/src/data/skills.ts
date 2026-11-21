@@ -14,6 +14,8 @@ export interface Skill {
 export interface SkillCategory {
   id: string;
   title: string;
+  /** Short name for the filter chips (defaults to `title`). */
+  label?: string;
   skills: Skill[];
 }
 
@@ -50,6 +52,7 @@ export const skillCategories: SkillCategory[] = [
   {
     id: "ai-ml",
     title: "AI / ML",
+    label: "AI/ML",
     skills: [
       { name: "LangChain", iconKey: "langchain", level: 4 },
       { name: "RAG", iconKey: "rag", level: 4 },
@@ -61,6 +64,7 @@ export const skillCategories: SkillCategory[] = [
   {
     id: "devops-tools",
     title: "DevOps & Tools",
+    label: "Tools",
     skills: [
       { name: "Git", iconKey: "git", level: 5 },
       { name: "Docker", iconKey: "docker", level: 3 },

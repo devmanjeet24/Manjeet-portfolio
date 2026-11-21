@@ -10,15 +10,15 @@ no "hire me / available for freelance", no "building with AI" style taglines, no
 that reads like generated marketing copy.
 
 ## Placeholder register (everything that is still dummy)
-Updated: 2026-11-21 (About section added)
+Updated: 2026-11-21 (About, Skills and Projects sections added)
 
 | Where | What is dummy |
 |---|---|
 | `profile.ts` | `name` ("Manjeet Singh", confirm), `location` ("City, India"), `email` (hello@example.com), social URLs (`your-username`), `resumeUrl` (no `resume.pdf` yet), `role`, `tagline`, `shortBio`, `longBio`, `availability` |
 | `profile.ts` (About) | `stats` (`yearsOfExperience`, `projectsShipped`), `currently` (`building`, `learning`); `longBio` is the About text; the "Technologies" number is counted from `skills.ts` (so it is dummy until skills are real) |
 | `profile.ts` (hero) | `heroRoleLine`, `focusAreas`, `heroCaption`, `heroDescription`, `marquee` |
-| `skills.ts` | skill list, levels, icon keys |
-| `projects.ts` | all 5 projects (titles, text, links, images do not exist) |
+| `skills.ts` | skill list (names, categories), `level` values (not shown on the site yet), `iconKey`s; the AI/ML category is the highlighted one |
+| `projects.ts` | all 5 projects (titles, text, years, links); no screenshots (the site draws generated mock screenshots); `kinds` (filter chips) and `mern` (badge) are guesses; project #5 "Docs Search" is a made-up non-MERN project so the AI filter has something |
 | `aiProjects.ts` | all 3 projects (RAG Q&A, Chatbot, Lead Scraper): text, steps, links, images |
 | `experience.ts` | all companies, roles, dates, achievements |
 | `education.ts` | institution, degree, certification |
@@ -53,17 +53,27 @@ Updated: 2026-11-21 (About section added)
       `portrait.png`, so a head-and-shoulders photo works best
 - [ ] The heading text "A bit about me" is fixed in the component; change it there if wanted
 
-## `skills.ts`
-- [ ] Confirm skill names and remove/add the ones that apply
-- [ ] Adjust optional `level` values (1-5) or delete them
-- [ ] Icons: every `iconKey` needs a matching icon in the UI (decide icon set)
+## `skills.ts` and the Skills section (`components/sections/skills.tsx`)
+- [ ] Confirm skill names and remove/add the ones that apply (the About "Technologies" number counts them)
+- [ ] `level` (1-5) is optional and not displayed yet; delete or keep
+- [ ] Icons: brand logos live in `src/data/skill-icons.ts` (from simple-icons). A new skill with
+      a brand logo needs an entry there (same key as its `iconKey`); skills without a logo
+      (like RAG) get a line icon from `components/ui/skill-icon.tsx`. No entry = generic icon
+- [ ] Filter chips use `label` in `skills.ts` ("AI/ML", "Tools"); change `HIGHLIGHT_ID` in
+      `skills.tsx` if a different category should be highlighted
+- [ ] Heading text "Tools I work with" and the one-line intro are fixed in `skills.tsx`
 
-## `projects.ts` (5 placeholders)
+## `projects.ts` and the Projects section (`components/sections/projects.tsx`)
 - [ ] Real project names, `slug`, descriptions, year, category
-- [ ] `githubUrl` and `liveUrl` for each (both optional)
-- [ ] Screenshots in `web/public/images/projects/` (paths currently point to missing files)
+- [ ] `githubUrl` and `liveUrl` for each (both optional; the button is hidden if missing)
+- [ ] Screenshots: save in `web/public/images/projects/` and set `image` in `projects.ts`.
+      Until then each card shows a generated mock screenshot (`project-mock.tsx`)
+- [ ] `mern: true` only for projects built with MongoDB, Express, React and Node.js (shows the MERN badge)
+- [ ] `kinds` per project: `"full-stack"`, `"frontend"` and/or `"ai"` (these drive the filter chips)
 - [ ] Tech lists and highlights
-- [ ] Decide which projects are `featured`
+- [ ] Replace the made-up "Docs Search" project (non-MERN, AI filter) with a real one, or drop the AI chip
+- [ ] Each card links to `/projects/<slug>`: that detail page is not built yet (404 for now)
+- [ ] `featured` is not used yet (all projects are shown)
 
 ## `aiProjects.ts` (3 placeholders: RAG Q&A, Chatbot, Lead Scraper)
 - [ ] Real titles, problem and solution text

@@ -253,6 +253,42 @@ html.cursor-custom * {
   opacity: 1;
 }
 
+/* ---------- Cursor-following gradient border (parent needs `.group`, `--mx`/`--my`) ---------- */
+.glow-border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 50%),
+    var(--accent),
+    transparent 60%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+.group:hover > .glow-border,
+.group:focus-within > .glow-border {
+  opacity: 1;
+}
+
+/* ---------- Marquee track (speed and direction come from CSS variables) ---------- */
+.marquee-track {
+  animation: marquee var(--marquee-duration, 70s) linear infinite
+    var(--marquee-direction, normal);
+}
+.marquee-pausable:hover .marquee-track {
+  animation-play-state: paused;
+}
+
 /* ---------- Hero: marquee + scroll chevron ---------- */
 @keyframes marquee {
   from {

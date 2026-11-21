@@ -1,7 +1,12 @@
 /**
  * REPLACE WITH REAL DATA
- * Placeholder MERN projects: titles, links and images are all fictional.
+ * Placeholder projects: titles, text and links are all fictional.
+ *
+ * Images: leave `image` out and the site draws a generated mock screenshot. When you have a
+ * real screenshot, put it in public/images/projects/ and set `image` to its path.
  */
+
+export type ProjectKind = "full-stack" | "frontend" | "ai";
 
 export interface Project {
   slug: string;
@@ -11,11 +16,15 @@ export interface Project {
   tech: string[];
   githubUrl?: string;
   liveUrl?: string;
-  /** Path under /public/images. */
-  image: string;
+  /** Screenshot path under /public (e.g. "/images/projects/shop.jpg"). Optional. */
+  image?: string;
   featured: boolean;
   year: number;
-  category: "Web App" | "E-commerce" | "SaaS" | "Dashboard" | "Social";
+  category: "Web App" | "E-commerce" | "SaaS" | "Dashboard" | "Social" | "AI Tool";
+  /** Which filter chips the project appears under. */
+  kinds: ProjectKind[];
+  /** Built with the MERN stack: gets a "MERN" badge. */
+  mern: boolean;
   highlights: string[];
 }
 
@@ -30,10 +39,11 @@ export const projects: Project[] = [
     tech: ["React", "Node.js", "Express", "MongoDB", "Stripe"],
     githubUrl: "https://github.com/your-username/commerce-platform",
     liveUrl: "https://example.com/commerce-platform",
-    image: "/images/projects/commerce-platform.jpg",
     featured: true,
     year: 2025,
     category: "E-commerce",
+    kinds: ["full-stack"],
+    mern: true,
     highlights: [
       "Stripe checkout with webhook-driven order fulfilment",
       "Admin dashboard with inventory and sales analytics",
@@ -46,13 +56,14 @@ export const projects: Project[] = [
     shortDescription: "Real-time project and task management for small teams.",
     longDescription:
       "A collaborative workspace with boards, comments and live presence. Changes sync instantly across clients using WebSockets.",
-    tech: ["Next.js", "TypeScript", "Socket.IO", "MongoDB", "Tailwind CSS"],
+    tech: ["Next.js", "TypeScript", "Node.js", "Express", "Socket.IO", "MongoDB"],
     githubUrl: "https://github.com/your-username/team-workspace",
     liveUrl: "https://example.com/team-workspace",
-    image: "/images/projects/team-workspace.jpg",
     featured: true,
     year: 2025,
     category: "SaaS",
+    kinds: ["full-stack", "frontend"],
+    mern: true,
     highlights: [
       "Real-time updates over WebSockets",
       "Drag-and-drop kanban boards",
@@ -65,13 +76,14 @@ export const projects: Project[] = [
     shortDescription: "Interactive dashboard turning raw event data into clear insights.",
     longDescription:
       "A data dashboard with filterable charts, saved views and CSV export, backed by aggregation pipelines for responsive queries on large datasets.",
-    tech: ["React", "Express", "MongoDB", "Recharts"],
+    tech: ["React", "Node.js", "Express", "MongoDB", "Recharts"],
     githubUrl: "https://github.com/your-username/analytics-dashboard",
     liveUrl: "https://example.com/analytics-dashboard",
-    image: "/images/projects/analytics-dashboard.jpg",
     featured: true,
     year: 2024,
     category: "Dashboard",
+    kinds: ["frontend", "full-stack"],
+    mern: true,
     highlights: [
       "MongoDB aggregation pipelines for fast queries",
       "Saved filters and shareable views",
@@ -86,10 +98,11 @@ export const projects: Project[] = [
       "A community app featuring profiles, a ranked feed, threaded comments and notifications, designed to stay performant as content grows.",
     tech: ["React", "Node.js", "Express", "MongoDB", "Redis"],
     githubUrl: "https://github.com/your-username/community-hub",
-    image: "/images/projects/community-hub.jpg",
     featured: false,
     year: 2024,
     category: "Social",
+    kinds: ["full-stack"],
+    mern: true,
     highlights: [
       "Cursor-based pagination for infinite feeds",
       "Redis caching for hot content",
@@ -97,22 +110,24 @@ export const projects: Project[] = [
     ],
   },
   {
-    slug: "booking-system",
-    title: "Booking System",
-    shortDescription: "Appointment scheduling with availability rules and reminders.",
+    slug: "docs-search",
+    title: "Docs Search",
+    shortDescription:
+      "Ask questions about a set of PDFs and get answers that point to the source page.",
     longDescription:
-      "A scheduling app where providers define availability and customers book slots, with calendar sync, email reminders and conflict-free booking logic.",
-    tech: ["Next.js", "Node.js", "MongoDB", "Nodemailer"],
-    githubUrl: "https://github.com/your-username/booking-system",
-    liveUrl: "https://example.com/booking-system",
-    image: "/images/projects/booking-system.jpg",
+      "A small tool for searching long documents in plain language. Files are split into passages and indexed, and each answer links back to the page it came from.",
+    tech: ["Python", "FastAPI", "LangChain", "PostgreSQL", "Next.js"],
+    githubUrl: "https://github.com/your-username/docs-search",
+    liveUrl: "https://example.com/docs-search",
     featured: false,
-    year: 2023,
-    category: "Web App",
+    year: 2025,
+    category: "AI Tool",
+    kinds: ["ai", "full-stack"],
+    mern: false,
     highlights: [
-      "Timezone-aware availability engine",
-      "Automated email reminders",
-      "Double-booking prevention with atomic updates",
+      "Every answer cites the document and page",
+      "Upload and index PDFs from the browser",
+      "FastAPI backend with a Next.js interface",
     ],
   },
 ];
