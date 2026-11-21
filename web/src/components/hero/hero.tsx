@@ -1,16 +1,19 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion, useMotionValue, useMotionValueEvent, useTransform } from "framer-motion";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Container } from "@/components/ui/container";
 import { profile } from "@/data/profile";
 import { useAnchorNavigation } from "@/hooks/use-anchor-navigation";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { useSectionProgress } from "@/hooks/use-section-progress";
 import { cn } from "@/lib/cn";
 import { PORTRAIT } from "@/lib/portrait-config";
 import { PortraitParticlesLazy } from "./portrait-particles-lazy";
+import { ProgressDebug } from "./progress-debug";
 
 /**
  * Home hero. The section is tall and its content is `sticky`, so scrolling drives
@@ -18,14 +21,23 @@ import { PortraitParticlesLazy } from "./portrait-particles-lazy";
  */
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = usePrefersReducedMotion();
   const onAnchorClick = useAnchorNavigation();
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
+  const scrollYProgress = useSectionProgress(sectionRef);
+  // Scroll mapped to 0..1 (about 120vh of scrolling), written into ONE stable
+  // MotionValue so the WebGL scene is never rebuilt. The debug slider can take it over.
+  const scrollMapped = useTransform(scrollYProgress, [0.1, 0.85], [0, 1], {
+    clamp: true,
   });
-  const progress = useTransform(scrollYProgress, [0.1, 0.85], [0, 1], { clamp: true });
+  const progress = useMotionValue(0);
+  const debugOwns = useRef(false);
+  useMotionValueEvent(scrollMapped, "change", (v) => {
+    if (!debugOwns.current) progress.set(v);
+  });
+  useEffect(() => {
+    progress.set(scrollMapped.get());
+  }, [progress, scrollMapped]);
   const textOpacity = useTransform(scrollYProgress, [0.04, 0.32], [1, 0], {
     clamp: true,
   });
@@ -68,7 +80,7 @@ export function Hero() {
 
           <motion.div
             style={reduceMotion ? undefined : { opacity: textOpacity, y: textY }}
-            className="min-w-0 space-y-6 self-center md:order-1"
+            className="relative z-10 min-w-0 space-y-6 self-center md:order-1"
           >
             <SectionLabel index="01">Presence</SectionLabel>
             <SectionHeading
@@ -118,6 +130,13 @@ export function Hero() {
           </span>
         </motion.div>
       </div>
+      <ProgressDebug
+        progress={progress}
+        onOwnChange={(own) => {
+          debugOwns.current = own;
+        }}
+        onRelease={() => progress.set(scrollMapped.get())}
+      />
     </section>
   );
 }

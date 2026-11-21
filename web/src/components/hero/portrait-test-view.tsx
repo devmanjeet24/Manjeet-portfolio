@@ -1,8 +1,9 @@
 "use client";
 
-import { useScroll, useTransform } from "framer-motion";
+import { useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useSectionProgress } from "@/hooks/use-section-progress";
 import { PORTRAIT } from "@/lib/portrait-config";
 import type { PortraitShape } from "./portrait-particles";
 import { PortraitParticlesLazy } from "./portrait-particles-lazy";
@@ -14,10 +15,7 @@ import { PortraitParticlesLazy } from "./portrait-particles-lazy";
 export function PortraitTestView({ alt }: { alt: string }) {
   const [shape, setShape] = useState<PortraitShape>("round");
   const sectionRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
-  });
+  const scrollYProgress = useSectionProgress(sectionRef);
   const progress = useTransform(scrollYProgress, [0.1, 0.85], [0, 1], { clamp: true });
 
   return (

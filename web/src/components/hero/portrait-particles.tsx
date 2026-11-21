@@ -11,10 +11,13 @@ import {
   Points,
   Scene,
   ShaderMaterial,
+  Vector2,
+  Vector3,
   WebGLRenderer,
 } from "three";
 import { getDeviceTier, type DeviceTier } from "@/lib/device-tier";
 import { subscribePointer } from "@/lib/pointer";
+import { DISINTEGRATE } from "@/lib/portrait-config";
 import { samplePortrait, type PortraitSample } from "@/lib/portrait-sampler";
 import { portraitFragmentShader, portraitVertexShader } from "@/lib/portrait-shaders";
 import { cn } from "@/lib/cn";
@@ -28,6 +31,8 @@ const COVERAGE = 2.2;
 const CANVAS_SCALE = 2.2;
 /** Cap on framebuffer pixels so the oversized canvas stays cheap on retina screens. */
 const MAX_CANVAS_PIXELS = 8_000_000;
+/** Fallback accent (dark theme) if the CSS variable cannot be read. */
+const FALLBACK_ACCENT = new Vector3(0.91, 0.66, 0.49);
 const MAX_TILT_Y = 0.14;
 const MAX_TILT_X = 0.09;
 
@@ -50,6 +55,21 @@ interface PortraitParticlesProps {
 interface SceneHandle {
   setShape: (shape: PortraitShape) => void;
   dispose: () => void;
+}
+
+/** Reads `--accent` (a #rrggbb hex) as raw sRGB components, which is what the shader outputs. */
+function readAccent(target: Vector3) {
+  const hex = getComputedStyle(document.documentElement)
+    .getPropertyValue("--accent")
+    .trim();
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (m)
+    target.set(
+      parseInt(m[1], 16) / 255,
+      parseInt(m[2], 16) / 255,
+      parseInt(m[3], 16) / 255,
+    );
+  else target.copy(FALLBACK_ACCENT);
 }
 
 function createScene(
@@ -84,6 +104,7 @@ function createScene(
   geometry.setAttribute("aAlpha", new BufferAttribute(sample.alpha, 1));
   geometry.setAttribute("aSize", new BufferAttribute(sample.size, 1));
   geometry.setAttribute("aRandom", new BufferAttribute(sample.random, 4));
+  geometry.setAttribute("aDelay", new BufferAttribute(sample.delay, 1));
 
   const material = new ShaderMaterial({
     vertexShader: portraitVertexShader,
@@ -92,10 +113,17 @@ function createScene(
       uPointScale: { value: 1 },
       uShape: { value: shape === "square" ? 1 : 0 },
       uProgress: { value: 0 },
+      uFocus: { value: new Vector2(sample.focus[0], sample.focus[1]) },
+      uAccent: { value: new Vector3().copy(FALLBACK_ACCENT) },
+      uAccentMix: { value: DISINTEGRATE.accentMix },
     },
+    // Fewer noise octaves on phones keeps the vertex shader cheap.
+    defines: { OCTAVES: tier.mobile ? 1 : 2 },
     transparent: true,
     depthWrite: false,
   });
+
+  readAccent(material.uniforms.uAccent.value as Vector3);
 
   const points = new Points(geometry, material);
   points.frustumCulled = false;
@@ -146,9 +174,18 @@ function createScene(
     dirty = true;
   };
 
-  const frame = () => {
+  let lastTime = 0;
+  let frames = 0;
+  let renderMs = 0;
+  let intervalMs = 16.7;
+
+  const frame = (now: number) => {
     raf = 0;
     if (!running) return;
+    // Seconds since the last frame; clamped so a tab switch never causes a jump.
+    const dt = lastTime ? Math.min(0.05, (now - lastTime) / 1000) : 1 / 60;
+    if (lastTime) intervalMs += (dt * 1000 - intervalMs) * 0.1;
+    lastTime = now;
     if (tilt) {
       current.x += (target.x - current.x) * 0.08;
       current.y += (target.y - current.y) * 0.08;
@@ -164,15 +201,26 @@ function createScene(
         dirty = true;
       }
     }
-    if (Math.abs(scatter.target - scatter.value) > 5e-4) {
-      scatter.value += (scatter.target - scatter.value) * 0.14;
+    // Frame-rate-independent damping: silky on scroll, no jerk on fast flicks.
+    const gap = scatter.target - scatter.value;
+    if (Math.abs(gap) > 1e-4) {
+      scatter.value += gap * (1 - Math.exp(-dt / DISINTEGRATE.tau));
+      if (Math.abs(scatter.target - scatter.value) <= 1e-4)
+        scatter.value = scatter.target;
       material.uniforms.uProgress.value = scatter.value;
-      wrapper.dataset.progress = scatter.value.toFixed(3);
+      wrapper.dataset.progress = scatter.value.toFixed(4);
       dirty = true;
     }
     if (dirty) {
+      const t0 = performance.now();
       renderer.render(scene, camera);
+      renderMs += (performance.now() - t0 - renderMs) * 0.1;
       dirty = false;
+    }
+    // Light-weight stats for the debug panel and tests (every 30 frames).
+    if (++frames % 30 === 0) {
+      wrapper.dataset.frameMs = intervalMs.toFixed(1);
+      wrapper.dataset.renderMs = renderMs.toFixed(2);
     }
     raf = requestAnimationFrame(frame);
   };
@@ -182,10 +230,19 @@ function createScene(
     if (shouldRun === running) return;
     running = shouldRun;
     wrapper.dataset.running = String(running);
+    lastTime = 0;
     if (running && !raf) raf = requestAnimationFrame(frame);
     if (!running && raf) {
       cancelAnimationFrame(raf);
       raf = 0;
+    }
+    // Stopping mid-ease (e.g. a long jump away) must not leave a stale value behind:
+    // snap to where scroll says we are, so re-entering never replays a catch-up.
+    if (!running && scatter.value !== scatter.target) {
+      scatter.value = scatter.target;
+      material.uniforms.uProgress.value = scatter.value;
+      wrapper.dataset.progress = scatter.value.toFixed(4);
+      dirty = true;
     }
   };
 
@@ -209,7 +266,25 @@ function createScene(
   const unsubscribeProgress =
     progress?.on("change", (v) => {
       scatter.target = Math.min(1, Math.max(0, v));
+      // While not animating (off-screen or hidden tab) follow the scroll value exactly,
+      // so coming back into view never replays a stale catch-up animation.
+      if (!running) {
+        scatter.value = scatter.target;
+        material.uniforms.uProgress.value = scatter.value;
+        wrapper.dataset.progress = scatter.value.toFixed(4);
+        dirty = true;
+      }
     }) ?? null;
+
+  // Re-read the accent when the theme class on <html> changes.
+  const themeObserver = new MutationObserver(() => {
+    readAccent(material.uniforms.uAccent.value as Vector3);
+    dirty = true;
+  });
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
 
   const onContextLost = (event: Event) => {
     event.preventDefault();
@@ -236,6 +311,7 @@ function createScene(
       document.removeEventListener("visibilitychange", sync);
       unsubscribePointer?.();
       unsubscribeProgress?.();
+      themeObserver.disconnect();
       canvas.removeEventListener("webglcontextlost", onContextLost);
       geometry.dispose();
       material.dispose();
@@ -247,6 +323,8 @@ function createScene(
       delete wrapper.dataset.particles;
       delete wrapper.dataset.tilt;
       delete wrapper.dataset.progress;
+      delete wrapper.dataset.frameMs;
+      delete wrapper.dataset.renderMs;
     },
   };
 }
